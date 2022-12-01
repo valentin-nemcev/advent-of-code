@@ -21,5 +21,5 @@ Deno.test(function testTask1() {
     
     10000
   `;
-  assertEquals(task1(input), 24000);
+  assertEquals(task1(input), 45000);
 });

@@ -11,9 +11,12 @@ export function task1(input: string): number {
       nextChunk.push(parseInt(line));
     }
   });
+  if (nextChunk.length > 0) {
+    chunks.push(nextChunk);
+  }
   const sums = chunks.map((chunk) => chunk.reduce((a, b) => a + b));
   sums.sort((a, b) => b - a);
-  return sums[0];
+  return sums[0] + sums[1] + sums[2];
 }
 
 // Learn more at https://deno.land/manual/examples/module_metadata#concepts
