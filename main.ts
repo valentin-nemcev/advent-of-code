@@ -37,8 +37,20 @@ export function task2(input: string): number {
   }).reduce((a, b) => a + b);
 }
 
+export function task2b(input: string): number {
+  return input.split("\n").filter(Boolean).map((line) => {
+    const [abc, xyz] = line.split(" ");
+    const [theirs, outcome] = [
+      abc.charCodeAt(0) - "A".charCodeAt(0),
+      xyz.charCodeAt(0) - "X".charCodeAt(0) - 1,
+    ];
+    const mine = mod(theirs + outcome, 3);
+    return mine + 1 + (outcome == 1 ? 6 : outcome == 0 ? 3 : 0);
+  }).reduce((a, b) => a + b);
+}
+
 // Learn more at https://deno.land/manual/examples/module_metadata#concepts
 if (import.meta.main) {
   const input = await Deno.readTextFile("input/2.txt");
-  console.log(task2(input));
+  console.log(task2b(input));
 }

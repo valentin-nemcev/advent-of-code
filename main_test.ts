@@ -2,7 +2,7 @@ import { assertEquals } from "https://deno.land/std@0.166.0/testing/asserts.ts";
 
 import heredoc from "npm:theredoc";
 
-import { task1, task2 } from "./main.ts";
+import { task1, task2, task2b } from "./main.ts";
 
 Deno.test("task 1", () => {
   const input = heredoc`
@@ -31,4 +31,13 @@ Deno.test("task 2", () => {
     C Z
   `;
   assertEquals(task2(input), 15);
+});
+
+Deno.test("task 2 second", () => {
+  const input = heredoc`
+    A Y
+    B X
+    C Z
+  `;
+  assertEquals(task2b(input), 12);
 });
