@@ -1,3 +1,6 @@
+// @deno-types="npm:@types/lodash"
+import _ from "npm:lodash";
+
 export function task1(input: string): number {
   const chunks: number[][] = [];
   let nextChunk: number[] = [];
@@ -49,8 +52,35 @@ export function task2b(input: string): number {
   }).reduce((a, b) => a + b);
 }
 
+export function letterPriority(letter: string): number {
+  return letter < "a"
+    ? letter.charCodeAt(0) - "A".charCodeAt(0) + 27
+    : letter.charCodeAt(0) - "a".charCodeAt(0) + 1;
+}
+
+export function task3(input: string): number {
+  return input.split("\n").filter(Boolean).map((line) => {
+    const mid = line.length / 2;
+    const [first, second] = [line.slice(0, mid), line.slice(mid)].map((l) =>
+      l.split("")
+    );
+    const commonLetter = _.intersection(first, second)[0];
+    return letterPriority(commonLetter);
+  }).reduce((a, b) => a + b);
+}
+
+export function task3b(input: string): number {
+  return _.chunk(input.split("\n").filter(Boolean), 3).map(
+    (lines) => {
+      const letters = lines.map((l) => l.split(""));
+      const commonLetter = _.intersection(...letters)[0];
+      return letterPriority(commonLetter);
+    },
+  ).reduce((a, b) => a + b);
+}
+
 // Learn more at https://deno.land/manual/examples/module_metadata#concepts
 if (import.meta.main) {
-  const input = await Deno.readTextFile("input/2.txt");
-  console.log(task2b(input));
+  const input = await Deno.readTextFile("input/3.txt");
+  console.log(task3b(input));
 }

@@ -2,7 +2,7 @@ import { assertEquals } from "https://deno.land/std@0.166.0/testing/asserts.ts";
 
 import heredoc from "npm:theredoc";
 
-import { task1, task2, task2b } from "./main.ts";
+import * as T from "./main.ts";
 
 Deno.test("task 1", () => {
   const input = heredoc`
@@ -21,7 +21,7 @@ Deno.test("task 1", () => {
     
     10000
   `;
-  assertEquals(task1(input), 45000);
+  assertEquals(T.task1(input), 45000);
 });
 
 Deno.test("task 2", () => {
@@ -30,7 +30,7 @@ Deno.test("task 2", () => {
     B X
     C Z
   `;
-  assertEquals(task2(input), 15);
+  assertEquals(T.task2(input), 15);
 });
 
 Deno.test("task 2 second", () => {
@@ -39,5 +39,25 @@ Deno.test("task 2 second", () => {
     B X
     C Z
   `;
-  assertEquals(task2b(input), 12);
+  assertEquals(T.task2b(input), 12);
+});
+
+Deno.test("letterPriority", () => {
+  assertEquals(T.letterPriority("a"), 1);
+  assertEquals(T.letterPriority("z"), 26);
+  assertEquals(T.letterPriority("A"), 27);
+  assertEquals(T.letterPriority("Z"), 52);
+});
+
+Deno.test("task 3", () => {
+  const input = heredoc`
+  vJrwpWtwJgWrhcsFMMfFFhFp
+  jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL
+  PmmdzqPrVvPwwTWBwg
+  wMqvLMZHhHMvwLHjbvcjnnSBnvTQFn
+  ttgJtRGJQctTZtZT
+  CrZsJsPPZsGzwwsLwLmpwMDw
+  `;
+  assertEquals(T.task3(input), 157);
+  assertEquals(T.task3b(input), 70);
 });
