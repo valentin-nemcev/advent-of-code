@@ -28,7 +28,7 @@ function mod(a: number, b: number): number {
 }
 
 export function task2(input: string): number {
-  return input.split("\n").filter(Boolean).map((line) => {
+  return input.split("\n").map((line) => {
     const [abc, xyz] = line.split(" ");
     const [theirs, mine] = [
       abc.charCodeAt(0) - "A".charCodeAt(0) + 1,
@@ -41,7 +41,7 @@ export function task2(input: string): number {
 }
 
 export function task2b(input: string): number {
-  return input.split("\n").filter(Boolean).map((line) => {
+  return input.split("\n").map((line) => {
     const [abc, xyz] = line.split(" ");
     const [theirs, outcome] = [
       abc.charCodeAt(0) - "A".charCodeAt(0),
@@ -59,7 +59,7 @@ export function letterPriority(letter: string): number {
 }
 
 export function task3(input: string): number {
-  return input.split("\n").filter(Boolean).map((line) => {
+  return input.split("\n").map((line) => {
     const mid = line.length / 2;
     const [first, second] = [line.slice(0, mid), line.slice(mid)].map((l) =>
       l.split("")
@@ -70,17 +70,48 @@ export function task3(input: string): number {
 }
 
 export function task3b(input: string): number {
-  return _.chunk(input.split("\n").filter(Boolean), 3).map(
-    (lines) => {
-      const letters = lines.map((l) => l.split(""));
-      const commonLetter = _.intersection(...letters)[0];
-      return letterPriority(commonLetter);
-    },
-  ).reduce((a, b) => a + b);
+  return _.sum(
+    _.chunk(input.split("\n"), 3).map(
+      (lines) => {
+        const letters = lines.map((l) => l.split(""));
+        const commonLetter = _.intersection(...letters)[0];
+        return letterPriority(commonLetter);
+      },
+    ),
+  );
+}
+
+export function task4(input: string): number {
+  const contains = ([a1, a2]: [number, number], [b1, b2]: [number, number]) =>
+    a1 >= b1 && a2 <= b2;
+  return _.sum(
+    input.split("\n").map((line) => {
+      const [a, b] = line.split(",").map((int) =>
+        int.split("-").map((d) => parseInt(d)) as [number, number]
+      );
+      console.log(a, b);
+      return contains(a, b) || contains(b, a);
+    }),
+  );
+}
+
+export function task4b(input: string): number {
+  const partiallyOverlaps = (
+    [a1, a2]: [number, number],
+    [b1, b2]: [number, number],
+  ) => a1 >= b1 && a1 <= b2;
+  return _.sum(
+    input.split("\n").map((line) => {
+      const [a, b] = line.split(",").map((int) =>
+        int.split("-").map((d) => parseInt(d)) as [number, number]
+      );
+      return partiallyOverlaps(a, b) || partiallyOverlaps(b, a);
+    }),
+  );
 }
 
 // Learn more at https://deno.land/manual/examples/module_metadata#concepts
 if (import.meta.main) {
-  const input = await Deno.readTextFile("input/3.txt");
-  console.log(task3b(input));
+  const input = (await Deno.readTextFile("input/4.txt")).trim();
+  console.log(task4b(input));
 }
