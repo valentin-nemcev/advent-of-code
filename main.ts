@@ -1,10 +1,10 @@
 // @deno-types="npm:@types/lodash"
 import _ from "npm:lodash";
 
-export function task1(input: string): number {
+export function task1(input: string[]): number {
   const chunks: number[][] = [];
   let nextChunk: number[] = [];
-  input.split("\n").forEach((line) => {
+  input.forEach((line) => {
     if (line == "") {
       if (nextChunk.length > 0) {
         chunks.push(nextChunk);
@@ -27,8 +27,8 @@ function mod(a: number, b: number): number {
   return ((a % b) + b) % b;
 }
 
-export function task2(input: string): number {
-  return input.split("\n").map((line) => {
+export function task2(input: string[]): number {
+  return input.map((line) => {
     const [abc, xyz] = line.split(" ");
     const [theirs, mine] = [
       abc.charCodeAt(0) - "A".charCodeAt(0) + 1,
@@ -40,8 +40,8 @@ export function task2(input: string): number {
   }).reduce((a, b) => a + b);
 }
 
-export function task2b(input: string): number {
-  return input.split("\n").map((line) => {
+export function task2b(input: string[]): number {
+  return input.map((line) => {
     const [abc, xyz] = line.split(" ");
     const [theirs, outcome] = [
       abc.charCodeAt(0) - "A".charCodeAt(0),
@@ -58,8 +58,8 @@ export function letterPriority(letter: string): number {
     : letter.charCodeAt(0) - "a".charCodeAt(0) + 1;
 }
 
-export function task3(input: string): number {
-  return input.split("\n").map((line) => {
+export function task3(input: string[]): number {
+  return input.map((line) => {
     const mid = line.length / 2;
     const [first, second] = [line.slice(0, mid), line.slice(mid)].map((l) =>
       l.split("")
@@ -69,9 +69,9 @@ export function task3(input: string): number {
   }).reduce((a, b) => a + b);
 }
 
-export function task3b(input: string): number {
+export function task3b(input: string[]): number {
   return _.sum(
-    _.chunk(input.split("\n"), 3).map(
+    _.chunk(input, 3).map(
       (lines) => {
         const letters = lines.map((l) => l.split(""));
         const commonLetter = _.intersection(...letters)[0];
@@ -81,27 +81,26 @@ export function task3b(input: string): number {
   );
 }
 
-export function task4(input: string): number {
+export function task4(input: string[]): number {
   const contains = ([a1, a2]: [number, number], [b1, b2]: [number, number]) =>
     a1 >= b1 && a2 <= b2;
   return _.sum(
-    input.split("\n").map((line) => {
+    input.map((line) => {
       const [a, b] = line.split(",").map((int) =>
         int.split("-").map((d) => parseInt(d)) as [number, number]
       );
-      console.log(a, b);
       return contains(a, b) || contains(b, a);
     }),
   );
 }
 
-export function task4b(input: string): number {
+export function task4b(input: string[]): number {
   const partiallyOverlaps = (
     [a1, a2]: [number, number],
     [b1, b2]: [number, number],
   ) => a1 >= b1 && a1 <= b2;
   return _.sum(
-    input.split("\n").map((line) => {
+    input.map((line) => {
       const [a, b] = line.split(",").map((int) =>
         int.split("-").map((d) => parseInt(d)) as [number, number]
       );
@@ -112,6 +111,6 @@ export function task4b(input: string): number {
 
 // Learn more at https://deno.land/manual/examples/module_metadata#concepts
 if (import.meta.main) {
-  const input = (await Deno.readTextFile("input/4.txt")).trim();
+  const input = (await Deno.readTextFile("input/4.txt")).trim().split("\n");
   console.log(task4b(input));
 }
