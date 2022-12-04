@@ -1,7 +1,9 @@
 // @deno-types="npm:@types/lodash"
 import _ from "npm:lodash";
 
-export function task1(input: string[]): number {
+type Task = (input: string[]) => [number, number];
+
+export const task1: Task = (input) => {
   const chunks: number[][] = [];
   let nextChunk: number[] = [];
   input.forEach((line) => {
@@ -19,98 +21,87 @@ export function task1(input: string[]): number {
   }
   const sums = chunks.map((chunk) => chunk.reduce((a, b) => a + b));
   sums.sort((a, b) => b - a);
-  return sums[0] + sums[1] + sums[2];
-}
+  return [sums[0], sums[0] + sums[1] + sums[2]];
+};
 
 // lol js
-function mod(a: number, b: number): number {
-  return ((a % b) + b) % b;
-}
+const mod = (a: number, b: number): number => ((a % b) + b) % b;
 
-export function task2(input: string[]): number {
-  return input.map((line) => {
+const letterCode = (offset: string, letter: string): number =>
+  letter.charCodeAt(0) - offset.charCodeAt(0);
+
+export const task2: Task = (input) => {
+  let scoreA = 0;
+  let scoreB = 0;
+  input.forEach((line) => {
     const [abc, xyz] = line.split(" ");
-    const [theirs, mine] = [
-      abc.charCodeAt(0) - "A".charCodeAt(0) + 1,
-      xyz.charCodeAt(0) - "X".charCodeAt(0) + 1,
-    ];
-    const outcome = mod(mine - theirs, 3);
+    const [theirs, second] = [letterCode("A", abc), letterCode("X", xyz)];
 
-    return mine + (outcome == 1 ? 6 : outcome == 0 ? 3 : 0);
-  }).reduce((a, b) => a + b);
-}
+    let yours = second;
+    let outcome = mod(yours - theirs + 1, 3);
+    scoreA += yours + 1 + outcome * 3;
 
-export function task2b(input: string[]): number {
-  return input.map((line) => {
-    const [abc, xyz] = line.split(" ");
-    const [theirs, outcome] = [
-      abc.charCodeAt(0) - "A".charCodeAt(0),
-      xyz.charCodeAt(0) - "X".charCodeAt(0) - 1,
-    ];
-    const mine = mod(theirs + outcome, 3);
-    return mine + 1 + (outcome == 1 ? 6 : outcome == 0 ? 3 : 0);
-  }).reduce((a, b) => a + b);
-}
+    outcome = second;
+    yours = mod(theirs + outcome - 1, 3);
+    scoreB += yours + 1 + outcome * 3;
+  });
+  return [scoreA, scoreB];
+};
 
-export function letterPriority(letter: string): number {
-  return letter < "a"
-    ? letter.charCodeAt(0) - "A".charCodeAt(0) + 27
-    : letter.charCodeAt(0) - "a".charCodeAt(0) + 1;
-}
+export const letterPriority = (letter: string): number =>
+  letter.charCodeAt(0) -
+  (letter < "a" ? "A".charCodeAt(0) - 26 : "a".charCodeAt(0)) + 1;
 
-export function task3(input: string[]): number {
-  return input.map((line) => {
+export const task3: Task = (input) => {
+  let scoreA = 0;
+  let scoreB = 0;
+  input.forEach((line) => {
     const mid = line.length / 2;
     const [first, second] = [line.slice(0, mid), line.slice(mid)].map((l) =>
       l.split("")
     );
     const commonLetter = _.intersection(first, second)[0];
-    return letterPriority(commonLetter);
-  }).reduce((a, b) => a + b);
-}
-
-export function task3b(input: string[]): number {
-  return _.sum(
-    _.chunk(input, 3).map(
-      (lines) => {
-        const letters = lines.map((l) => l.split(""));
-        const commonLetter = _.intersection(...letters)[0];
-        return letterPriority(commonLetter);
-      },
-    ),
+    scoreA += letterPriority(commonLetter);
+  });
+  _.chunk(input, 3).forEach(
+    (lines) => {
+      const letters = lines.map((l) => l.split(""));
+      const commonLetter = _.intersection(...letters)[0];
+      scoreB += letterPriority(commonLetter);
+    },
   );
-}
+  return [scoreA, scoreB];
+};
 
-export function task4(input: string[]): number {
+export const task4: Task = (input) => {
+  let scoreA = 0;
+  let scoreB = 0;
   const contains = ([a1, a2]: [number, number], [b1, b2]: [number, number]) =>
     a1 >= b1 && a2 <= b2;
-  return _.sum(
-    input.map((line) => {
-      const [a, b] = line.split(",").map((int) =>
-        int.split("-").map((d) => parseInt(d)) as [number, number]
-      );
-      return contains(a, b) || contains(b, a);
-    }),
-  );
-}
-
-export function task4b(input: string[]): number {
   const partiallyOverlaps = (
-    [a1, a2]: [number, number],
+    [a1]: [number, number],
     [b1, b2]: [number, number],
   ) => a1 >= b1 && a1 <= b2;
-  return _.sum(
-    input.map((line) => {
-      const [a, b] = line.split(",").map((int) =>
-        int.split("-").map((d) => parseInt(d)) as [number, number]
-      );
-      return partiallyOverlaps(a, b) || partiallyOverlaps(b, a);
-    }),
-  );
-}
+
+  input.forEach((line) => {
+    const [a, b] = line.split(",").map((int) =>
+      int.split("-").map((d) => parseInt(d)) as [number, number]
+    );
+    scoreA += Number(contains(a, b) || contains(b, a));
+    scoreB += Number(partiallyOverlaps(a, b) || partiallyOverlaps(b, a));
+  });
+
+  return [scoreA, scoreB];
+};
+
+const tasks = [task1, task2, task3, task4];
 
 // Learn more at https://deno.land/manual/examples/module_metadata#concepts
 if (import.meta.main) {
-  const input = (await Deno.readTextFile("input/4.txt")).trim().split("\n");
-  console.log(task4b(input));
+  for (const [i, task] of tasks.entries()) {
+    const input = (await Deno.readTextFile(`input/${i + 1}.txt`)).trim().split(
+      "\n",
+    );
+    console.log("Task " + (i + 1), ...task(input));
+  }
 }
