@@ -1,7 +1,7 @@
 // @deno-types="npm:@types/lodash"
 import _ from "npm:lodash";
 
-type Task = (input: string[]) => [number, number];
+type Task<T = number> = (input: string[]) => [T, T];
 
 export const task1: Task = (input) => {
   const chunks: number[][] = [];
@@ -94,7 +94,45 @@ export const task4: Task = (input) => {
   return [scoreA, scoreB];
 };
 
-const tasks = [task1, task2, task3, task4];
+export const task5: Task<string> = (input) => {
+  const splitAt = input.indexOf("");
+  const [stackLines, moves] = [
+    input.slice(0, splitAt - 1),
+    input.slice(splitAt + 1),
+  ];
+
+  const numbers = (input[splitAt - 1].match(/\d+/g) ?? []).map(Number);
+
+  const stacks: string[][][] = [0, 1].map(() =>
+    Array(numbers[numbers.length - 1]).fill(null).map(
+      () => [],
+    )
+  );
+
+  stackLines.reverse().map((line) => {
+    Array.from(line.matchAll(/(?:\[(\w)\]| {3})(?: |$)/g), (m) => m[1]).forEach(
+      (letter, i) => {
+        if (letter != null) stacks.forEach((s) => s[i].push(letter));
+      },
+    );
+  });
+
+  moves.forEach((move) => {
+    const match = move.match(/move (\d+) from (\d+) to (\d+)/) ?? [];
+    const [amount, from, to] = match.slice(1).map(Number);
+    for (let i = 0; i < amount; i++) {
+      stacks[0][to - 1].push(stacks[0][from - 1].pop()!);
+    }
+    stacks[1][to - 1].push(...stacks[1][from - 1].splice(-amount, amount));
+  });
+
+  return stacks.map((stack) => stack.map((s) => s[s.length - 1]).join("")) as [
+    string,
+    string,
+  ];
+};
+
+const tasks = [task1, task2, task3, task4, task5];
 
 // Learn more at https://deno.land/manual/examples/module_metadata#concepts
 if (import.meta.main) {

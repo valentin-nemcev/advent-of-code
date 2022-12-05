@@ -1,4 +1,6 @@
 import { assertEquals } from "https://deno.land/std@0.166.0/testing/asserts.ts";
+// @deno-types="npm:@types/lodash"
+import _ from "npm:lodash";
 
 import * as T from "./main.ts";
 
@@ -6,8 +8,8 @@ const example = (strings: readonly string[]): string[] => {
   const lines = strings.join("").split("\n");
   if (lines[0] == "") lines.shift();
   if (lines[lines.length - 1].match(/^[\s\n]*$/)) lines.pop();
-  const [, indent] = (lines[0] ?? "").match(/^(\s*)/) ?? [];
-  return lines.map((line) => line.slice(indent?.length ?? 0));
+  const indent = _.min(lines.map((line) => line.match(/^(\s*)/)![1].length));
+  return lines.map((line) => line.slice(indent));
 };
 
 const fromFile = async (name: string): Promise<string[]> =>
@@ -75,4 +77,20 @@ Deno.test("task 4", async () => {
   `;
   assertEquals(T.task4(input), [2, 4]);
   assertEquals(T.task4(await fromFile("4")), [498, 859]);
+});
+
+Deno.test("task 5", async () => {
+  const input = example`
+        [D]    
+    [N] [C]    
+    [Z] [M] [P]
+    1   2   3 
+    
+    move 1 from 2 to 1
+    move 3 from 1 to 3
+    move 2 from 2 to 1
+    move 1 from 1 to 2
+  `;
+  assertEquals(T.task5(input), ["CMZ", "MCD"]);
+  assertEquals(T.task5(await fromFile("5")), ["QNNTGTPFN", "GGNPJBTTR"]);
 });
