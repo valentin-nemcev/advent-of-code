@@ -103,10 +103,9 @@ export const task5: Task<string> = (input) => {
 
   const numbers = (input[splitAt - 1].match(/\d+/g) ?? []).map(Number);
 
-  const stacks: string[][][] = [0, 1].map(() =>
-    Array(numbers[numbers.length - 1]).fill(null).map(
-      () => [],
-    )
+  const stacks = _.times(
+    2,
+    () => _.times(_.last(numbers)!, () => [] as string[]),
   );
 
   stackLines.reverse().map((line) => {
@@ -118,18 +117,15 @@ export const task5: Task<string> = (input) => {
   });
 
   moves.forEach((move) => {
-    const match = move.match(/move (\d+) from (\d+) to (\d+)/) ?? [];
-    const [amount, from, to] = match.slice(1).map(Number);
-    for (let i = 0; i < amount; i++) {
-      stacks[0][to - 1].push(stacks[0][from - 1].pop()!);
-    }
+    const match = move.match(/move (\d+) from (\d+) to (\d+)/);
+    const [amount, from, to] = match!.slice(1).map(Number);
+    stacks[0][to - 1].push(
+      ...stacks[0][from - 1].splice(-amount, amount).reverse(),
+    );
     stacks[1][to - 1].push(...stacks[1][from - 1].splice(-amount, amount));
   });
 
-  return stacks.map((stack) => stack.map((s) => s[s.length - 1]).join("")) as [
-    string,
-    string,
-  ];
+  return stacks.map((s) => s.map(_.last).join("")) as [string, string];
 };
 
 const tasks = [task1, task2, task3, task4, task5];
