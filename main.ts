@@ -128,7 +128,22 @@ export const task5: Task<string> = (input) => {
   return stacks.map((s) => s.map(_.last).join("")) as [string, string];
 };
 
-const tasks = [task1, task2, task3, task4, task5];
+export const task6: Task = ([input]) => {
+  let startOfPacket = 0;
+  let startOfMessage = 0;
+  for (let i = 1; i <= input.length; i++) {
+    if (_.uniq(input.substring(i - 4, i)).length == 4 && !startOfPacket) {
+      startOfPacket = i;
+    }
+
+    if (_.uniq(input.substring(i - 14, i)).length == 14 && !startOfMessage) {
+      startOfMessage = i;
+    }
+  }
+  return [startOfPacket, startOfMessage];
+};
+
+const tasks = [task1, task2, task3, task4, task5, task6];
 
 export const readTaskInput = async (task: number): Promise<string[]> =>
   (await Deno.readTextFile(`input/${task}.txt`)).trim().split(

@@ -91,3 +91,12 @@ Deno.test("task 5", async () => {
   assertEquals(T.task5(input), ["CMZ", "MCD"]);
   assertEquals(T.task5(await readTaskInput(5)), ["QNNTGTPFN", "GGNPJBTTR"]);
 });
+
+Deno.test("task 6", async () => {
+  assertEquals(T.task6(["mjqjpqmgbljsphdztnvjfqwrcgsmlb"]), [7, 19]);
+  assertEquals(T.task6(["bvwbjplbgvbhsrlpgdmjqwftvncz"]), [5, 23]);
+  assertEquals(T.task6(["nppdvjthqldpwncqszvftbrmjlhg"]), [6, 23]);
+  assertEquals(T.task6(["nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg"]), [10, 29]);
+  assertEquals(T.task6(["zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw"]), [11, 26]);
+  assertEquals(T.task6(await readTaskInput(6)), [1480, 2746]);
+});
