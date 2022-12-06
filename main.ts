@@ -130,12 +130,20 @@ export const task5: Task<string> = (input) => {
 
 const tasks = [task1, task2, task3, task4, task5];
 
+export const readTaskInput = async (task: number): Promise<string[]> =>
+  (await Deno.readTextFile(`input/${task}.txt`)).trim().split(
+    "\n",
+  );
+
 // Learn more at https://deno.land/manual/examples/module_metadata#concepts
 if (import.meta.main) {
   for (const [i, task] of tasks.entries()) {
-    const input = (await Deno.readTextFile(`input/${i + 1}.txt`)).trim().split(
-      "\n",
-    );
-    console.log("Task " + (i + 1), ...task(input));
+    console.log("Task " + (i + 1), ...task(await readTaskInput(i + 1)));
   }
+}
+
+for (const [i, task] of tasks.entries()) {
+  Deno.bench("Task " + (i + 1), async () => {
+    task(await readTaskInput(i + 1));
+  });
 }

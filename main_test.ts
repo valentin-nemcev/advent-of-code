@@ -3,7 +3,7 @@ import { assertEquals } from "https://deno.land/std@0.166.0/testing/asserts.ts";
 import _ from "npm:lodash";
 
 import * as T from "./main.ts";
-
+const { readTaskInput } = T;
 const example = (strings: readonly string[]): string[] => {
   const lines = strings.join("").split("\n");
   if (lines[0] == "") lines.shift();
@@ -11,9 +11,6 @@ const example = (strings: readonly string[]): string[] => {
   const indent = _.min(lines.map((line) => line.match(/^(\s*)/)![1].length));
   return lines.map((line) => line.slice(indent));
 };
-
-const fromFile = async (name: string): Promise<string[]> =>
-  (await Deno.readTextFile(`input/${name}.txt`)).trim().split("\n");
 
 Deno.test("task 1", async () => {
   const input = example`
@@ -33,7 +30,7 @@ Deno.test("task 1", async () => {
     10000
   `;
   assertEquals(T.task1(input), [24000, 45000]);
-  assertEquals(T.task1(await fromFile("1")), [69289, 205615]);
+  assertEquals(T.task1(await readTaskInput(1)), [69289, 205615]);
 });
 
 Deno.test("task 2", async () => {
@@ -43,7 +40,7 @@ Deno.test("task 2", async () => {
     C Z
   `;
   assertEquals(T.task2(input), [15, 12]);
-  assertEquals(T.task2(await fromFile("2")), [14827, 13889]);
+  assertEquals(T.task2(await readTaskInput(2)), [14827, 13889]);
 });
 
 Deno.test("letterPriority", () => {
@@ -63,7 +60,7 @@ Deno.test("task 3", async () => {
     CrZsJsPPZsGzwwsLwLmpwMDw
   `;
   assertEquals(T.task3(input), [157, 70]);
-  assertEquals(T.task3(await fromFile("3")), [7850, 2581]);
+  assertEquals(T.task3(await readTaskInput(3)), [7850, 2581]);
 });
 
 Deno.test("task 4", async () => {
@@ -76,7 +73,7 @@ Deno.test("task 4", async () => {
     2-6,4-8
   `;
   assertEquals(T.task4(input), [2, 4]);
-  assertEquals(T.task4(await fromFile("4")), [498, 859]);
+  assertEquals(T.task4(await readTaskInput(4)), [498, 859]);
 });
 
 Deno.test("task 5", async () => {
@@ -92,5 +89,5 @@ Deno.test("task 5", async () => {
     move 1 from 1 to 2
   `;
   assertEquals(T.task5(input), ["CMZ", "MCD"]);
-  assertEquals(T.task5(await fromFile("5")), ["QNNTGTPFN", "GGNPJBTTR"]);
+  assertEquals(T.task5(await readTaskInput(5)), ["QNNTGTPFN", "GGNPJBTTR"]);
 });
