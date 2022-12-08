@@ -3,7 +3,7 @@ import { assertEquals } from "https://deno.land/std@0.166.0/testing/asserts.ts";
 import _ from "npm:lodash";
 import { asyncWrap } from "npm:iter-tools-es";
 
-import * as T from "./main_iter.ts";
+import * as T from "./main.ts";
 const { taskWithInput } = T;
 const example = (strings: readonly string[]): AsyncIterableIterator<string> => {
   const lines = strings.join("").split("\n");
