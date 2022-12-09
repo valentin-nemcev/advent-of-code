@@ -157,3 +157,29 @@ Deno.test("task 8", async () => {
   assertEquals(await T.task8(input), [21, 8]);
   assertEquals(await taskWithInput(8, T.task8), [1832, 157320]);
 });
+
+Deno.test("task 9", async () => {
+  const input1 = example`
+    R 4
+    U 4
+    L 3
+    D 1
+    R 4
+    D 1
+    L 5
+    R 2
+  `;
+  assertEquals(await T.task9(input1), [13, 1]);
+  const input2 = example`
+    R 5
+    U 8
+    L 8
+    D 3
+    R 17
+    D 10
+    L 25
+    U 20
+  `;
+  assertEquals(await T.task9(input2), [88, 36]);
+  assertEquals(await taskWithInput(9, T.task9), [6175, 2578]);
+});

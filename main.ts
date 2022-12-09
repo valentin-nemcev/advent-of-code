@@ -228,6 +228,53 @@ export const task8: Task = async (input) => {
   ];
 };
 
+export const task9: Task = async (input) => {
+  const snake = _.times(10, () => [0, 0]);
+  const head = snake[0];
+  const positionsA = new Set();
+  const positionsB = new Set();
+
+  const _print = () =>
+    _.range(-15, 6).map((y) =>
+      _.range(-11, 15).map((x) => {
+        const i = snake.findIndex((n) => n[0] == x && n[1] == y);
+        return i >= 0
+          ? i
+          : x == 0 && y == 0
+          ? "s"
+          : positionsB.has([x, y].join(","))
+          ? "#"
+          : ".";
+      }).join("")
+    )
+      .join("\n");
+
+  for await (const line of input) {
+    const [dir, count] = line.split(" ");
+    for (let i = 0; i < Number(count); i++) {
+      if (dir == "U") head[1]--;
+      if (dir == "D") head[1]++;
+      if (dir == "L") head[0]--;
+      if (dir == "R") head[0]++;
+
+      for (let i = 1; i < snake.length; i++) {
+        const nodeA = snake[i - 1], nodeB = snake[i];
+        const dist = [nodeA[0] - nodeB[0], nodeA[1] - nodeB[1]];
+
+        if (Math.abs(dist[0]) > 1 || Math.abs(dist[1]) > 1) {
+          nodeB[0] += Math.sign(dist[0]);
+          nodeB[1] += Math.sign(dist[1]);
+        }
+      }
+
+      positionsA.add(snake[1].join(","));
+      positionsB.add(_.last(snake)!.join(","));
+    }
+    // console.log(_print());
+  }
+  return [positionsA.size, positionsB.size];
+};
+
 const tasks: Task<number | string>[] = [
   task1,
   task2,
@@ -237,6 +284,7 @@ const tasks: Task<number | string>[] = [
   task6,
   task7,
   task8,
+  task9,
 ];
 
 export const taskWithInput = async <T>(
@@ -273,7 +321,7 @@ export const taskWithInput = async <T>(
     try {
       await r.body.pipeTo(f.writable);
     } finally {
-      f.close();
+      // f.close();
     }
     return await read();
   }
