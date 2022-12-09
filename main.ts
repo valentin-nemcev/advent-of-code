@@ -1,6 +1,7 @@
 // @deno-types="npm:@types/lodash"
 import _ from "npm:lodash";
 import { readLines } from "https://deno.land/std@0.167.0/io/mod.ts";
+import "https://deno.land/std@0.167.0/dotenv/load.ts";
 
 import {
   arrayFromAsync,
@@ -195,6 +196,31 @@ export const task7: Task = async (input) => {
   return [sum, dirSize];
 };
 
+export const task8: Task = async (input) => {
+  const trees = (await arrayFromAsync(input)).map((line) =>
+    line.split("").map(Number)
+  );
+  const visibility = trees.map((line) => line.map(() => false));
+  const indexes = trees.map((line, x) => line.map((_, y) => [x, y]));
+  const transpose = <T>(a: T[][]) =>
+    a[0].map((_, x) => a.map((_, y) => a[y][x]));
+
+  [indexes, transpose(indexes)].forEach((i) =>
+    i.forEach((line) =>
+      [_.forEach, _.forEachRight].forEach((f) => {
+        let maxTree = -1;
+        f(line, ([x, y]) => {
+          const tree = trees[x][y];
+          visibility[x][y] ||= tree > maxTree;
+          if (tree > maxTree) maxTree = tree;
+        });
+      })
+    )
+  );
+
+  return [_.sum(visibility.map((line) => line.filter(Boolean).length)), 0];
+};
+
 const tasks: Task<number | string>[] = [
   task1,
   task2,
@@ -203,17 +229,45 @@ const tasks: Task<number | string>[] = [
   task5,
   task6,
   task7,
+  task8,
 ];
 
 export const taskWithInput = async <T>(
   number: number,
   task: Task<T>,
 ): Promise<[T, T]> => {
-  const f = await Deno.open(`input/${number}.txt`);
+  const path = `input/${number}.txt`;
+
+  const read = async () => {
+    const f = await Deno.open(path);
+    try {
+      return await task(readLines(f));
+    } finally {
+      f.close();
+    }
+  };
+
   try {
-    return await task(readLines(f));
-  } finally {
-    f.close();
+    return await read();
+  } catch (error) {
+    if (!(error instanceof Deno.errors.NotFound)) {
+      throw error;
+    }
+    const cookie = Deno.env.get("AOC_SESSION_COOKIE");
+    if (!cookie) throw new Error("Please set AOC_SESSION_COOKIE");
+    const r = await fetch(`https://adventofcode.com/2022/day/${number}/input`, {
+      headers: { cookie },
+    });
+    if (!r.ok || !r.body) {
+      throw new Error(r.statusText);
+    }
+    const f = await Deno.open(path, { create: true, write: true });
+    try {
+      await r.body.pipeTo(f.writable);
+    } finally {
+      f.close();
+    }
+    return await read();
   }
 };
 
