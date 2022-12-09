@@ -1,7 +1,7 @@
 // @deno-types="npm:@types/lodash"
 import _ from "npm:lodash";
 import { readLines } from "https://deno.land/std@0.167.0/io/mod.ts";
-import "https://deno.land/std@0.167.0/dotenv/load.ts";
+import { config } from "https://deno.land/std@0.167.0/dotenv/mod.ts";
 
 import {
   arrayFromAsync,
@@ -200,25 +200,32 @@ export const task8: Task = async (input) => {
   const trees = (await arrayFromAsync(input)).map((line) =>
     line.split("").map(Number)
   );
-  const visibility = trees.map((line) => line.map(() => false));
-  const indexes = trees.map((line, x) => line.map((_, y) => [x, y]));
-  const transpose = <T>(a: T[][]) =>
-    a[0].map((_, x) => a.map((_, y) => a[y][x]));
 
-  [indexes, transpose(indexes)].forEach((i) =>
-    i.forEach((line) =>
-      [_.forEach, _.forEachRight].forEach((f) => {
-        let maxTree = -1;
-        f(line, ([x, y]) => {
-          const tree = trees[x][y];
-          visibility[x][y] ||= tree > maxTree;
-          if (tree > maxTree) maxTree = tree;
-        });
-      })
-    )
+  const result = trees.map((line, x) =>
+    line.map((tree, y) => {
+      let visible = false, score = 1;
+      [
+        _.range(y + 1, line.length).map((y1, i) => [x, y1, i]),
+        _.rangeRight(y).map((y1, i) => [x, y1, i]),
+        _.range(x + 1, trees.length).map((x1, i) => [x1, y, i]),
+        _.rangeRight(x).map((x1, i) => [x1, y, i]),
+      ].forEach((ix) => {
+        for (const [x, y, i] of ix) {
+          if (tree > trees[x][y]) continue;
+          score *= i + 1;
+          return;
+        }
+        score *= ix.length;
+        visible ||= true;
+      });
+      return { visible, score };
+    })
   );
 
-  return [_.sum(visibility.map((line) => line.filter(Boolean).length)), 0];
+  return [
+    _.sum(result.map((line) => line.filter((x) => x.visible).length)),
+    _.max(result.map((line) => _.max(line.map((x) => x.score)))) ?? 0,
+  ];
 };
 
 const tasks: Task<number | string>[] = [
@@ -253,6 +260,7 @@ export const taskWithInput = async <T>(
     if (!(error instanceof Deno.errors.NotFound)) {
       throw error;
     }
+    await config();
     const cookie = Deno.env.get("AOC_SESSION_COOKIE");
     if (!cookie) throw new Error("Please set AOC_SESSION_COOKIE");
     const r = await fetch(`https://adventofcode.com/2022/day/${number}/input`, {

@@ -154,6 +154,6 @@ Deno.test("task 8", async () => {
     33549
     35390
   `;
-  assertEquals(await T.task8(input), [21, 0]);
-  assertEquals(await taskWithInput(8, T.task8), [1832, 0]);
+  assertEquals(await T.task8(input), [21, 8]);
+  assertEquals(await taskWithInput(8, T.task8), [1832, 157320]);
 });
