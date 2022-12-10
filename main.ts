@@ -10,9 +10,9 @@ import {
   asyncFork,
 } from "npm:iter-tools-es";
 
-type Task<T = number> = (
+type Task<T1 = number, T2 = T1> = (
   input: AsyncIterableIterator<string>,
-) => Promise<[T, T]>;
+) => Promise<[T1, T2]>;
 
 export const task1: Task = async (input) => {
   const chunks: number[][] = [];
@@ -275,7 +275,28 @@ export const task9: Task = async (input) => {
   return [positionsA.size, positionsB.size];
 };
 
-const tasks: Task<number | string>[] = [
+export const task10: Task<number, string[]> = async (input) => {
+  let cycle = 0, reg = 1, resultA = 0;
+  const display = _.times(6, () => new Array(40));
+  const incrCycle = () => {
+    const row = Math.floor(cycle / 40), col = cycle % 40;
+    display[row][col] = Math.abs(col - reg) <= 1 ? "#" : ".";
+    cycle++;
+    if ((cycle - 20) % 40 == 0) resultA += cycle * reg;
+  };
+  for await (const line of input) {
+    const [instr, arg] = line.split(" ");
+    if (instr == "noop") incrCycle();
+    else {
+      incrCycle();
+      incrCycle();
+      reg += Number(arg);
+    }
+  }
+  return [resultA, display.map((line) => line.join(""))];
+};
+
+const tasks: Task<unknown, unknown>[] = [
   task1,
   task2,
   task3,
@@ -285,12 +306,13 @@ const tasks: Task<number | string>[] = [
   task7,
   task8,
   task9,
+  task10,
 ];
 
-export const taskWithInput = async <T>(
+export const taskWithInput = async <T1, T2>(
   number: number,
-  task: Task<T>,
-): Promise<[T, T]> => {
+  task: Task<T1, T2>,
+): Promise<[T1, T2]> => {
   const path = `input/${number}.txt`;
 
   const read = async () => {
@@ -308,6 +330,7 @@ export const taskWithInput = async <T>(
     if (!(error instanceof Deno.errors.NotFound)) {
       throw error;
     }
+    console.log(`Downloading input for task ${number}`);
     await config();
     const cookie = Deno.env.get("AOC_SESSION_COOKIE");
     if (!cookie) throw new Error("Please set AOC_SESSION_COOKIE");
@@ -318,11 +341,7 @@ export const taskWithInput = async <T>(
       throw new Error(r.statusText);
     }
     const f = await Deno.open(path, { create: true, write: true });
-    try {
-      await r.body.pipeTo(f.writable);
-    } finally {
-      // f.close();
-    }
+    await r.body.pipeTo(f.writable);
     return await read();
   }
 };
