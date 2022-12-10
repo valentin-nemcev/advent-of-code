@@ -8,6 +8,12 @@ import {
   asyncBatch,
   asyncFirst,
   asyncFork,
+  asyncMap,
+  asyncReduce,
+  asyncSplitWhen,
+  asyncTakeSorted,
+  execPipe,
+  pipe,
 } from "npm:iter-tools-es";
 
 type Task<T1 = number, T2 = T1> = (
@@ -15,24 +21,13 @@ type Task<T1 = number, T2 = T1> = (
 ) => Promise<[T1, T2]>;
 
 export const task1: Task = async (input) => {
-  const chunks: number[][] = [];
-  let nextChunk: number[] = [];
-  for await (const line of input) {
-    if (line == "") {
-      if (nextChunk.length > 0) {
-        chunks.push(nextChunk);
-        nextChunk = [];
-      }
-    } else {
-      nextChunk.push(parseInt(line));
-    }
-  }
-  if (nextChunk.length > 0) {
-    chunks.push(nextChunk);
-  }
-  const sums = chunks.map((chunk) => chunk.reduce((a, b) => a + b));
-  sums.sort((a, b) => b - a);
-  return [sums[0], sums[0] + sums[1] + sums[2]];
+  const sums = await arrayFromAsync(execPipe(
+    input,
+    asyncSplitWhen(_.isEmpty),
+    asyncMap(pipe(asyncMap(Number), asyncReduce(_.add))),
+    asyncTakeSorted(3),
+  ));
+  return [sums[2], _.sum(sums)];
 };
 
 // lol js
