@@ -1,5 +1,5 @@
 // @deno-types="npm:@types/lodash"
-import _ from "npm:lodash";
+import _, { conformsTo } from "npm:lodash";
 import { readLines } from "https://deno.land/std@0.167.0/io/mod.ts";
 import { config } from "https://deno.land/std@0.167.0/dotenv/mod.ts";
 
@@ -291,6 +291,59 @@ export const task10: Task<number, string[]> = async (input) => {
   return [resultA, display.map((line) => line.join(""))];
 };
 
+export const task11: Task = async (input) => {
+  const monkeys = await execPipe(
+    input,
+    asyncSplitWhen(_.isEmpty),
+    asyncMap(async (linesIt: AsyncIterableIterator<string>) => {
+      const lines = await arrayFromAsync(linesIt);
+      return {
+        startingItems: lines[1].match(/(\d+)/g)!.map(Number),
+        op: new Function(
+          "old",
+          "return " + lines[2].match(/new = (.*)/)![1],
+        ) as (old: number) => number,
+        divBy: Number(lines[3].match(/by (\d+)/)![1]),
+        throwTo: lines.slice(-2).reverse().map((l) =>
+          Number(l.match(/to monkey (\d+)/)![1])
+        ),
+        itemsPerMonkey: [] as number[][],
+        inspectCount: 0,
+      };
+    }),
+    arrayFromAsync,
+  );
+  const work = (rounds: number, k: number) => {
+    monkeys.forEach((monkey) => {
+      monkey.itemsPerMonkey = monkey.startingItems.map((item) =>
+        monkeys.map(() => item)
+      );
+      monkey.inspectCount = 0;
+    });
+    _.range(rounds).forEach(() => {
+      monkeys.forEach((monkey, i) => {
+        monkey.itemsPerMonkey.forEach((items) => {
+          items = items.map((item, monkeyN) => {
+            item = Math.floor(monkey.op(item) / k);
+            if (item > Number.MAX_SAFE_INTEGER) throw new Error("Overflow");
+            if (k == 1) item = item % monkeys[monkeyN].divBy;
+            return item;
+          });
+
+          const next = monkey.throwTo[Number((items[i] % monkey.divBy) == 0)];
+          monkeys[next].itemsPerMonkey.push(items);
+        });
+        monkey.inspectCount += monkey.itemsPerMonkey.length;
+        monkey.itemsPerMonkey.length = 0;
+      });
+    });
+    return monkeys.map((m) => m.inspectCount).sort((a, b) => b - a).slice(0, 2)
+      .reduce((a, b) => a * b);
+  };
+
+  return [work(20, 3), work(10000, 1)];
+};
+
 const tasks: Task<unknown, unknown>[] = [
   task1,
   task2,
@@ -302,6 +355,7 @@ const tasks: Task<unknown, unknown>[] = [
   task8,
   task9,
   task10,
+  task11,
 ];
 
 export const taskWithInput = async <T1, T2>(
