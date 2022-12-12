@@ -344,6 +344,75 @@ export const task11: Task = async (input) => {
   return [work(20, 3), work(10000, 1)];
 };
 
+export const task12: Task = async (input) => {
+  const terrainInput = await execPipe(
+    input,
+    asyncMap((line) => line.split("")),
+    arrayFromAsync,
+  );
+  type Pos = [number, number];
+  let start!: Pos, dest!: Pos;
+  const terrain = terrainInput.map((row, r) =>
+    row.map((letter, c) => {
+      if (letter == "S") {
+        start = [r, c];
+        letter = "a";
+      }
+      if (letter == "E") {
+        dest = [r, c];
+        letter = "z";
+      }
+      return letterCode("a", letter);
+    })
+  );
+  const rowCount = terrain.length, colCount = terrain[0].length;
+
+  let paths = [[start]];
+  const visited = terrain.map((r) => r.map(() => false));
+  const walk = (): number => {
+    let progress = false;
+    paths = paths.flatMap((path) => {
+      const [r, c] = _.last(path)!;
+
+      const current = terrain[r][c];
+      const directions: [number, number][] = [[r + 1, c], [r, c + 1], [
+        r - 1,
+        c,
+      ], [r, c - 1]];
+      const nodes = directions.filter(
+        ([r, c]) => {
+          if (
+            !(0 <= r && r < rowCount &&
+              0 <= c && c < colCount)
+          ) return false;
+          const diff = terrain[r][c] - current;
+          if (diff > 1) return false;
+          return !visited[r][c];
+        },
+      );
+      nodes.forEach(([r, c]) => visited[r][c] = true);
+      if (nodes.length) progress = true;
+      return nodes.map((node) => [...path, node]);
+    });
+    if (!progress) {
+      console.log(paths);
+      console.log(
+        visited.map((row, r) =>
+          row.map((v, c) => v ? terrainInput[r][c] : " ").join("")
+        ).join("\n"),
+      );
+      throw new Error("Stuck");
+    }
+    for (const path of paths) {
+      const [r, c] = _.last(path)!;
+      if (dest[0] == r && dest[1] == c) return path.length - 1;
+    }
+    return walk();
+  };
+
+  return [walk(), 0];
+};
+
 const tasks: Task<unknown, unknown>[] = [
   task1,
   task2,
@@ -356,6 +425,7 @@ const tasks: Task<unknown, unknown>[] = [
   task9,
   task10,
   task11,
+  task12,
 ];
 
 export const taskWithInput = async <T1, T2>(
@@ -380,7 +450,7 @@ export const taskWithInput = async <T1, T2>(
       throw error;
     }
     console.log(`Downloading input for task ${number}`);
-    await config();
+    await config({ export: true });
     const cookie = Deno.env.get("AOC_SESSION_COOKIE");
     if (!cookie) throw new Error("Please set AOC_SESSION_COOKIE");
     const r = await fetch(`https://adventofcode.com/2022/day/${number}/input`, {

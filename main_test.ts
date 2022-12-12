@@ -380,7 +380,19 @@ Deno.test("task 11", async () => {
       Test: divisible by 17
         If true: throw to monkey 0
         If false: throw to monkey 1
-`;
+  `;
   assertEquals(await T.task11(input), [10605, 2713310158]);
   assertEquals(await taskWithInput(11, T.task11), [95472, 17926061332]);
+});
+
+Deno.test("task 12", async () => {
+  const input = example`
+    Sabqponm
+    abcryxxl
+    accszExk
+    acctuvwj
+    abdefghi
+  `;
+  assertEquals(await T.task12(input), [31, 0]);
+  assertEquals(await taskWithInput(12, T.task12), [528, 0]);
 });
