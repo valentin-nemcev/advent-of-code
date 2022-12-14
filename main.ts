@@ -230,8 +230,8 @@ export const task9: Task = async (input) => {
   const positionsB = new Set();
 
   const _print = () =>
-    _.range(-15, 6).map((y) =>
-      _.range(-11, 15).map((x) => {
+    _.range(-165, 16).map((y) =>
+      _.range(-50, 175).map((x) => {
         const i = snake.findIndex((n) => n[0] == x && n[1] == y);
         return i >= 0
           ? i
@@ -265,8 +265,8 @@ export const task9: Task = async (input) => {
       positionsA.add(snake[1].join(","));
       positionsB.add(_.last(snake)!.join(","));
     }
-    // console.log(_print());
   }
+  // console.log(_print());
   return [positionsA.size, positionsB.size];
 };
 
@@ -368,17 +368,19 @@ export const task12: Task = async (input) => {
   const rowCount = terrain.length, colCount = terrain[0].length;
 
   let paths = [[start]];
-  const visited = terrain.map((r) => r.map(() => false));
-  const walk = (): number => {
+  let visited = terrain.map((r) => r.map(() => false));
+  const walk = (uphill: boolean): number => {
     let progress = false;
     paths = paths.flatMap((path) => {
       const [r, c] = _.last(path)!;
 
       const current = terrain[r][c];
-      const directions: [number, number][] = [[r + 1, c], [r, c + 1], [
-        r - 1,
-        c,
-      ], [r, c - 1]];
+      const directions: Pos[] = [
+        [r + 1, c],
+        [r, c + 1],
+        [r - 1, c],
+        [r, c - 1],
+      ];
       const nodes = directions.filter(
         ([r, c]) => {
           if (
@@ -386,7 +388,7 @@ export const task12: Task = async (input) => {
               0 <= c && c < colCount)
           ) return false;
           const diff = terrain[r][c] - current;
-          if (diff > 1) return false;
+          if (uphill ? diff > 1 : diff < -1) return false;
           return !visited[r][c];
         },
       );
@@ -405,12 +407,21 @@ export const task12: Task = async (input) => {
     }
     for (const path of paths) {
       const [r, c] = _.last(path)!;
-      if (dest[0] == r && dest[1] == c) return path.length - 1;
+      if (uphill) {
+        if (dest[0] == r && dest[1] == c) return path.length - 1;
+      } else {
+        if (terrain[r][c] == 0) return path.length - 1;
+      }
     }
-    return walk();
+    return walk(uphill);
   };
 
-  return [walk(), 0];
+  const resultUphill = walk(true);
+
+  paths = [[dest]];
+  visited = terrain.map((r) => r.map(() => false));
+  const resultDownhill = walk(false);
+  return [resultUphill, resultDownhill];
 };
 
 const tasks: Task<unknown, unknown>[] = [
