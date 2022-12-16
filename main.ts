@@ -1,34 +1,20 @@
-// @deno-types="npm:@types/lodash"
-import _, { lowerFirst } from "npm:lodash";
 import { readLines } from "https://deno.land/std@0.167.0/io/mod.ts";
 import { config } from "https://deno.land/std@0.167.0/dotenv/mod.ts";
 
-import {
-  arrayFromAsync,
-  asyncBatch,
-  asyncEnumerate,
-  asyncFilter,
-  asyncFirst,
-  asyncFork,
-  asyncMap,
-  asyncReduce,
-  asyncSplitWhen,
-  asyncTakeSorted,
-  execPipe,
-  map,
-  pipe,
-} from "npm:iter-tools-es";
+// @deno-types="npm:@types/lodash"
+import _ from "npm:lodash";
+import * as I from "npm:iter-tools-es";
 
 type Task<T1 = number, T2 = T1> = (
   input: AsyncIterableIterator<string>,
 ) => Promise<[T1, T2]>;
 
 export const task1: Task = async (input) => {
-  const sums = await arrayFromAsync(execPipe(
+  const sums = await I.arrayFromAsync(I.execPipe(
     input,
-    asyncSplitWhen(_.isEmpty),
-    asyncMap(pipe(asyncMap(Number), asyncReduce(_.add))),
-    asyncTakeSorted(3),
+    I.asyncSplitWhen(_.isEmpty),
+    I.asyncMap(I.pipe(I.asyncMap(Number), I.asyncReduce(_.add))),
+    I.asyncTakeSorted(3),
   ));
   return [sums[2], _.sum(sums)];
 };
@@ -63,7 +49,7 @@ export const task3: Task = async (input) => {
   const letterPriority = (letter: string): number =>
     letter.charCodeAt(0) -
     (letter < "a" ? "A".charCodeAt(0) - 26 : "a".charCodeAt(0)) + 1;
-  const [input1, input2] = asyncFork(input);
+  const [input1, input2] = I.asyncFork(input);
   for await (const line of input1) {
     const mid = line.length / 2;
     const [first, second] = [line.slice(0, mid), line.slice(mid)].map((l) =>
@@ -72,8 +58,8 @@ export const task3: Task = async (input) => {
     const commonLetter = _.intersection(first, second)[0];
     scoreA += letterPriority(commonLetter);
   }
-  for await (const lines of asyncBatch(3, input2)) {
-    const letters = (await arrayFromAsync(lines)).map((l) => l.split(""));
+  for await (const lines of I.asyncBatch(3, input2)) {
+    const letters = (await I.arrayFromAsync(lines)).map((l) => l.split(""));
     const commonLetter = _.intersection(...letters)[0];
     scoreB += letterPriority(commonLetter);
   }
@@ -103,7 +89,7 @@ export const task4: Task = async (input) => {
 };
 
 export const task5: Task<string> = async (inputIt) => {
-  const input = await arrayFromAsync(inputIt);
+  const input = await I.arrayFromAsync(inputIt);
   const splitAt = input.indexOf("");
   const [stackLines, moves] = [
     input.slice(0, splitAt - 1),
@@ -138,7 +124,7 @@ export const task5: Task<string> = async (inputIt) => {
 };
 
 export const task6: Task = async (inputIt) => {
-  const input = (await asyncFirst(inputIt))!;
+  const input = (await I.asyncFirst(inputIt))!;
   let startOfPacket = 0;
   let startOfMessage = 0;
   for (let i = 1; i <= input.length; i++) {
@@ -195,7 +181,7 @@ export const task7: Task = async (input) => {
 };
 
 export const task8: Task = async (input) => {
-  const trees = (await arrayFromAsync(input)).map((line) =>
+  const trees = (await I.arrayFromAsync(input)).map((line) =>
     line.split("").map(Number)
   );
 
@@ -295,11 +281,11 @@ export const task10: Task<number, string[]> = async (input) => {
 };
 
 export const task11: Task = async (input) => {
-  const monkeys = await execPipe(
+  const monkeys = await I.execPipe(
     input,
-    asyncSplitWhen(_.isEmpty),
-    asyncMap(async (linesIt: AsyncIterableIterator<string>) => {
-      const lines = await arrayFromAsync(linesIt);
+    I.asyncSplitWhen(_.isEmpty),
+    I.asyncMap(async (linesIt: AsyncIterableIterator<string>) => {
+      const lines = await I.arrayFromAsync(linesIt);
       return {
         startingItems: lines[1].match(/(\d+)/g)!.map(Number),
         op: new Function(
@@ -314,7 +300,7 @@ export const task11: Task = async (input) => {
         inspectCount: 0,
       };
     }),
-    arrayFromAsync,
+    I.arrayFromAsync,
   );
   const work = (rounds: number, k: number) => {
     monkeys.forEach((monkey) => {
@@ -348,10 +334,10 @@ export const task11: Task = async (input) => {
 };
 
 export const task12: Task = async (input) => {
-  const terrainInput = await execPipe(
+  const terrainInput = await I.execPipe(
     input,
-    asyncMap((line) => line.split("")),
-    arrayFromAsync,
+    I.asyncMap((line) => line.split("")),
+    I.arrayFromAsync,
   );
   type Pos = [number, number];
   let start!: Pos, dest!: Pos;
@@ -454,26 +440,26 @@ export const task13: Task = async (inputIt) => {
     throw new Error("No match");
   };
 
-  const [inputIt1, inputIt2] = asyncFork(inputIt);
+  const [inputIt1, inputIt2] = I.asyncFork(inputIt);
 
-  const filtered = await execPipe(
+  const filtered = await I.execPipe(
     inputIt1,
-    asyncSplitWhen(_.isEmpty),
-    asyncMap(pipe(asyncMap(parseLine), arrayFromAsync)),
-    asyncEnumerate(1),
-    asyncFilter(([, [left, right]]) => {
+    I.asyncSplitWhen(_.isEmpty),
+    I.asyncMap(I.pipe(I.asyncMap(parseLine), I.arrayFromAsync)),
+    I.asyncEnumerate(1),
+    I.asyncFilter(([, [left, right]]) => {
       const c = compare(left, right);
       if (_.isBoolean(c)) return c;
       throw new Error("No difference");
     }),
-    arrayFromAsync,
+    I.arrayFromAsync,
   );
 
-  const sorted = await execPipe(
+  const sorted = await I.execPipe(
     inputIt2,
-    asyncFilter((l) => !_.isEmpty(l)),
-    asyncMap(parseLine),
-    arrayFromAsync,
+    I.asyncFilter((l) => !_.isEmpty(l)),
+    I.asyncMap(parseLine),
+    I.arrayFromAsync,
     async (c) =>
       (await c).sort((left, right) => {
         const c = compare(left, right);
