@@ -3,8 +3,9 @@ import { assertEquals } from "https://deno.land/std@0.166.0/testing/asserts.ts";
 import _ from "npm:lodash";
 import { asyncWrap } from "npm:iter-tools-es";
 
-import * as T from "./main.ts";
-const { taskWithInput } = T;
+import * as T from "./tasks.ts";
+import { taskWithInput } from "./main.ts";
+
 const example = (strings: readonly string[]): AsyncIterableIterator<string> => {
   const lines = strings.join("").split("\n");
   if (lines[0] == "") lines.shift();
@@ -30,8 +31,8 @@ Deno.test("task 1", async () => {
     
     10000
   `;
-  assertEquals(await T.task1(input), [24000, 45000]);
-  assertEquals(await taskWithInput(1, T.task1), [69289, 205615]);
+  assertEquals(await T.task01(input), [24000, 45000]);
+  assertEquals(await taskWithInput(1, T.task01), [69289, 205615]);
 });
 
 Deno.test("task 2", async () => {
@@ -40,8 +41,8 @@ Deno.test("task 2", async () => {
     B X
     C Z
   `;
-  assertEquals(await T.task2(input), [15, 12]);
-  assertEquals(await taskWithInput(2, T.task2), [14827, 13889]);
+  assertEquals(await T.task02(input), [15, 12]);
+  assertEquals(await taskWithInput(2, T.task02), [14827, 13889]);
 });
 
 Deno.test("task 3", async () => {
@@ -53,8 +54,8 @@ Deno.test("task 3", async () => {
     ttgJtRGJQctTZtZT
     CrZsJsPPZsGzwwsLwLmpwMDw
   `;
-  assertEquals(await T.task3(input), [157, 70]);
-  assertEquals(await taskWithInput(3, T.task3), [7850, 2581]);
+  assertEquals(await T.task03(input), [157, 70]);
+  assertEquals(await taskWithInput(3, T.task03), [7850, 2581]);
 });
 
 Deno.test("task 4", async () => {
@@ -66,8 +67,8 @@ Deno.test("task 4", async () => {
     6-6,4-6
     2-6,4-8
   `;
-  assertEquals(await T.task4(input), [2, 4]);
-  assertEquals(await taskWithInput(4, T.task4), [498, 859]);
+  assertEquals(await T.task04(input), [2, 4]);
+  assertEquals(await taskWithInput(4, T.task04), [498, 859]);
 });
 
 Deno.test("task 5", async () => {
@@ -82,38 +83,41 @@ Deno.test("task 5", async () => {
     move 2 from 2 to 1
     move 1 from 1 to 2
   `;
-  assertEquals(await T.task5(input), ["CMZ", "MCD"]);
-  assertEquals(await taskWithInput(5, T.task5), [
+  assertEquals(await T.task05(input), ["CMZ", "MCD"]);
+  assertEquals(await taskWithInput(5, T.task05), [
     "QNNTGTPFN",
     "GGNPJBTTR",
   ]);
 });
 
 Deno.test("task 6", async () => {
-  assertEquals(await T.task6(asyncWrap(["mjqjpqmgbljsphdztnvjfqwrcgsmlb"])), [
+  assertEquals(await T.task06(asyncWrap(["mjqjpqmgbljsphdztnvjfqwrcgsmlb"])), [
     7,
     19,
   ]);
-  assertEquals(await T.task6(asyncWrap(["bvwbjplbgvbhsrlpgdmjqwftvncz"])), [
+  assertEquals(await T.task06(asyncWrap(["bvwbjplbgvbhsrlpgdmjqwftvncz"])), [
     5,
     23,
   ]);
-  assertEquals(await T.task6(asyncWrap(["nppdvjthqldpwncqszvftbrmjlhg"])), [
+  assertEquals(await T.task06(asyncWrap(["nppdvjthqldpwncqszvftbrmjlhg"])), [
     6,
     23,
   ]);
   assertEquals(
-    await T.task6(asyncWrap(["nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg"])),
+    await T.task06(asyncWrap(["nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg"])),
     [
       10,
       29,
     ],
   );
-  assertEquals(await T.task6(asyncWrap(["zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw"])), [
-    11,
-    26,
-  ]);
-  assertEquals(await taskWithInput(6, T.task6), [1480, 2746]);
+  assertEquals(
+    await T.task06(asyncWrap(["zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw"])),
+    [
+      11,
+      26,
+    ],
+  );
+  assertEquals(await taskWithInput(6, T.task06), [1480, 2746]);
 });
 
 Deno.test("task 7", async () => {
@@ -142,8 +146,8 @@ Deno.test("task 7", async () => {
     5626152 d.ext
     7214296 k
   `;
-  assertEquals(await T.task7(input), [95437, 24933642]);
-  assertEquals(await taskWithInput(7, T.task7), [1348005, 12785886]);
+  assertEquals(await T.task07(input), [95437, 24933642]);
+  assertEquals(await taskWithInput(7, T.task07), [1348005, 12785886]);
 });
 
 Deno.test("task 8", async () => {
@@ -154,8 +158,8 @@ Deno.test("task 8", async () => {
     33549
     35390
   `;
-  assertEquals(await T.task8(input), [21, 8]);
-  assertEquals(await taskWithInput(8, T.task8), [1832, 157320]);
+  assertEquals(await T.task08(input), [21, 8]);
+  assertEquals(await taskWithInput(8, T.task08), [1832, 157320]);
 });
 
 Deno.test("task 9", async () => {
@@ -169,7 +173,7 @@ Deno.test("task 9", async () => {
     L 5
     R 2
   `;
-  assertEquals(await T.task9(input1), [13, 1]);
+  assertEquals(await T.task09(input1), [13, 1]);
   const input2 = example`
     R 5
     U 8
@@ -180,8 +184,8 @@ Deno.test("task 9", async () => {
     L 25
     U 20
   `;
-  assertEquals(await T.task9(input2), [88, 36]);
-  assertEquals(await taskWithInput(9, T.task9), [6175, 2578]);
+  assertEquals(await T.task09(input2), [88, 36]);
+  assertEquals(await taskWithInput(9, T.task09), [6175, 2578]);
 });
 
 Deno.test("task 10", async () => {
