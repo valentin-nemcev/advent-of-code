@@ -1,11 +1,13 @@
 // @deno-types="npm:@types/lodash"
-import _, { conformsTo } from "npm:lodash";
+import _, { lowerFirst } from "npm:lodash";
 import { readLines } from "https://deno.land/std@0.167.0/io/mod.ts";
 import { config } from "https://deno.land/std@0.167.0/dotenv/mod.ts";
 
 import {
   arrayFromAsync,
   asyncBatch,
+  asyncEnumerate,
+  asyncFilter,
   asyncFirst,
   asyncFork,
   asyncMap,
@@ -13,6 +15,7 @@ import {
   asyncSplitWhen,
   asyncTakeSorted,
   execPipe,
+  map,
   pipe,
 } from "npm:iter-tools-es";
 
@@ -424,6 +427,76 @@ export const task12: Task = async (input) => {
   return [resultUphill, resultDownhill];
 };
 
+type NestedArray<T> = Array<T | NestedArray<T>>;
+export const task13: Task = async (inputIt) => {
+  const parseLine = (line: string): NestedArray<number> => eval(line);
+
+  const compare = (
+    a: number | NestedArray<number>,
+    b: number | NestedArray<number>,
+  ): boolean | null => {
+    if (_.isArray(a) && _.isNumber(b)) return compare(a, [b]);
+    if (_.isNumber(a) && _.isArray(b)) return compare([a], b);
+    if (_.isNumber(a) && _.isNumber(b)) {
+      if (a < b) return true;
+      if (a > b) return false;
+      return null;
+    }
+    if (_.isArray(a) && _.isArray(b)) {
+      for (let i = 0; i < Math.min(a.length, b.length); i++) {
+        const c = compare(a[i], b[i]);
+        if (_.isBoolean(c)) return c;
+      }
+      if (a.length < b.length) return true;
+      if (a.length > b.length) return false;
+      return null;
+    }
+    throw new Error("No match");
+  };
+
+  const [inputIt1, inputIt2] = asyncFork(inputIt);
+
+  const filtered = await execPipe(
+    inputIt1,
+    asyncSplitWhen(_.isEmpty),
+    asyncMap(pipe(asyncMap(parseLine), arrayFromAsync)),
+    asyncEnumerate(1),
+    asyncFilter(([, [left, right]]) => {
+      const c = compare(left, right);
+      if (_.isBoolean(c)) return c;
+      throw new Error("No difference");
+    }),
+    arrayFromAsync,
+  );
+
+  const sorted = await execPipe(
+    inputIt2,
+    asyncFilter((l) => !_.isEmpty(l)),
+    asyncMap(parseLine),
+    arrayFromAsync,
+    async (c) =>
+      (await c).sort((left, right) => {
+        const c = compare(left, right);
+        if (c === true) return -1;
+        if (c === false) return 1;
+        throw new Error("No difference");
+      }),
+  );
+
+  let indexA = -1, indexB = -1;
+
+  for (let i = 0; i < sorted.length; i++) {
+    if (indexA == -1) {
+      if (compare(sorted[i], [[2]]) == false) indexA = i + 1;
+    } else if (indexB == -1) {
+      if (compare(sorted[i], [[6]]) == false) indexB = i + 2;
+    } else {
+      break;
+    }
+  }
+
+  return [_.sum(filtered.map(_.first)), indexA * indexB];
+};
 const tasks: Task<unknown, unknown>[] = [
   task1,
   task2,
@@ -437,6 +510,7 @@ const tasks: Task<unknown, unknown>[] = [
   task10,
   task11,
   task12,
+  task13,
 ];
 
 export const taskWithInput = async <T1, T2>(

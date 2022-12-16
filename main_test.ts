@@ -396,3 +396,33 @@ Deno.test("task 12", async () => {
   assertEquals(await T.task12(input), [31, 29]);
   assertEquals(await taskWithInput(12, T.task12), [528, 522]);
 });
+
+Deno.test("task 13", async () => {
+  const input = example`
+    [1,1,3,1,1]
+    [1,1,5,1,1]
+    
+    [[1],[2,3,4]]
+    [[1],4]
+    
+    [9]
+    [[8,7,6]]
+    
+    [[4,4],4,4]
+    [[4,4],4,4,4]
+    
+    [7,7,7,7]
+    [7,7,7]
+    
+    []
+    [3]
+    
+    [[[]]]
+    [[]]
+    
+    [1,[2,[3,[4,[5,6,7]]]],8,9]
+    [1,[2,[3,[4,[5,6,0]]]],8,9]
+  `;
+  assertEquals(await T.task13(input), [13, 140]);
+  assertEquals(await taskWithInput(13, T.task13), [5198, 22344]);
+});
