@@ -410,10 +410,10 @@ export const task12: Task = async (input) => {
   return [resultUphill, resultDownhill];
 };
 
-type NestedArray<T> = Array<T | NestedArray<T>>;
 export const task13: Task = async (inputIt) => {
   const parseLine = (line: string): NestedArray<number> => eval(line);
 
+  type NestedArray<T> = Array<T | NestedArray<T>>;
   const compare = (
     a: number | NestedArray<number>,
     b: number | NestedArray<number>,
@@ -479,4 +479,50 @@ export const task13: Task = async (inputIt) => {
   }
 
   return [_.sum(filtered.map(_.first)), indexA * indexB];
+};
+
+export const task14: Task = async (inputIt) => {
+  type Cell = "#" | "o" | "x" | ".";
+  const width = 1000;
+  const level: Cell[][] = [];
+  for await (const line of inputIt) {
+    const points = line.split(" -> ")
+      .map((p) => p.split(",").map(Number));
+
+    const extraY = _.max(points.map((p) => p[1]))! - level.length + 1;
+    level.push(..._.times(extraY, () => _.times(width, () => "." as Cell)));
+
+    for (const [[x1, y1], [x2, y2]] of I.window(2, points)) {
+      const dx = Math.sign(x2 - x1), dy = Math.sign(y2 - y1);
+      _.range(x1, x2 + dx, dx).forEach((x) => level[y1][x] = "#");
+      _.range(y1, y2 + dy, dy).forEach((y) => level[y][x1] = "#");
+    }
+  }
+  level.push(
+    _.times(width, () => "." as Cell),
+    _.times(width, () => "#" as Cell),
+  );
+
+  let countA!: number;
+  let counter = 0;
+  for (; counter < level.length ** 2; counter++) {
+    let x = 500;
+    if (level[0][x] != ".") break;
+    inner:
+    for (let y = 0; y < level.length; y++) {
+      if (y == level.length - 2) countA ??= counter;
+      for (const cx of [x, x - 1, x + 1]) {
+        if (cx < 0 || cx >= width) throw new Error("Overflow!");
+        if (level[y][cx] == ".") {
+          x = cx;
+          continue inner;
+        }
+      }
+      level[y - 1][x] = countA ? "x" : "o";
+      break;
+    }
+  }
+
+  //   console.log(level.map((row) => row.slice(400, 600).join("")).join("\n"));
+  return [countA, counter];
 };
