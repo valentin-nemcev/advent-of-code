@@ -437,28 +437,28 @@ export const task13: Task = async (inputIt) => {
     throw new Error("No match");
   };
 
-  const [inputIt1, inputIt2] = I.asyncFork(inputIt);
+  const input = await I.arrayFromAsync(inputIt);
 
-  const filtered = await I.execPipe(
-    inputIt1,
-    I.asyncSplitWhen(_.isEmpty),
-    I.asyncMap(I.pipe(I.asyncMap(parseLine), I.arrayFromAsync)),
-    I.asyncEnumerate(1),
-    I.asyncFilter(([, [left, right]]) => {
+  const filtered = I.execPipe(
+    input,
+    I.splitWhen(_.isEmpty),
+    I.map(I.pipe(I.map(parseLine))),
+    I.enumerate(1),
+    I.filter(([, [left, right]]) => {
       const c = compare(left, right);
       if (_.isBoolean(c)) return c;
       throw new Error("No difference");
     }),
-    I.arrayFromAsync,
+    I.arrayFrom,
   );
 
-  const sorted = await I.execPipe(
-    inputIt2,
-    I.asyncFilter((l) => !_.isEmpty(l)),
-    I.asyncMap(parseLine),
-    I.arrayFromAsync,
-    async (c) =>
-      (await c).sort((left, right) => {
+  const sorted = I.execPipe(
+    input,
+    I.filter((l) => !_.isEmpty(l)),
+    I.map(parseLine),
+    I.arrayFrom,
+    (c) =>
+      c.sort((left, right) => {
         const c = compare(left, right);
         if (c === true) return -1;
         if (c === false) return 1;
