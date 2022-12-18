@@ -1,5 +1,5 @@
 // @deno-types="npm:@types/lodash"
-import _ from "npm:lodash";
+import _, { map } from "npm:lodash";
 import * as I from "npm:iter-tools-es";
 
 export type Task<T1 = number, T2 = T1> = (
@@ -293,34 +293,36 @@ export const task11: Task = async (input) => {
         throwTo: lines.slice(-2).reverse().map((l) =>
           Number(l.match(/to monkey (\d+)/)![1])
         ),
-        itemsPerMonkey: [] as number[][],
+        items: [] as number[],
         inspectCount: 0,
       };
     }),
     I.arrayFromAsync,
   );
+
+  const divBy = I.execPipe(
+    monkeys,
+    I.map((m) => m.divBy),
+    I.reduce(_.multiply),
+  );
+
   const work = (rounds: number, k: number) => {
     monkeys.forEach((monkey) => {
-      monkey.itemsPerMonkey = monkey.startingItems.map((item) =>
-        monkeys.map(() => item)
-      );
+      monkey.items = monkey.startingItems.slice();
       monkey.inspectCount = 0;
     });
     _.range(rounds).forEach(() => {
       monkeys.forEach((monkey, i) => {
-        monkey.itemsPerMonkey.forEach((items) => {
-          items = items.map((item, monkeyN) => {
-            item = Math.floor(monkey.op(item) / k);
-            if (item > Number.MAX_SAFE_INTEGER) throw new Error("Overflow");
-            if (k == 1) item = item % monkeys[monkeyN].divBy;
-            return item;
-          });
+        monkey.items.forEach((item) => {
+          item = Math.floor(monkey.op(item) / k);
+          if (item > Number.MAX_SAFE_INTEGER) throw new Error("Overflow");
+          if (k == 1) item = item % divBy;
 
-          const next = monkey.throwTo[Number((items[i] % monkey.divBy) == 0)];
-          monkeys[next].itemsPerMonkey.push(items);
+          const next = monkey.throwTo[Number((item % monkey.divBy) == 0)];
+          monkeys[next].items.push(item);
         });
-        monkey.inspectCount += monkey.itemsPerMonkey.length;
-        monkey.itemsPerMonkey.length = 0;
+        monkey.inspectCount += monkey.items.length;
+        monkey.items.length = 0;
       });
     });
     return monkeys.map((m) => m.inspectCount).sort((a, b) => b - a).slice(0, 2)
