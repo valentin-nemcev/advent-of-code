@@ -1,9 +1,10 @@
 // @deno-types="npm:@types/lodash"
-import _, { map } from "npm:lodash";
+import _, { map, xor } from "npm:lodash";
 import * as I from "npm:iter-tools-es";
 
-export type Task<T1 = number, T2 = T1> = (
+export type Task<T1 = number, T2 = T1, Args extends unknown[] = void[]> = (
   input: AsyncIterableIterator<string>,
+  ...args: Args
 ) => Promise<[T1, T2]>;
 
 export const task01: Task = async (input) => {
@@ -527,4 +528,63 @@ export const task14: Task = async (inputIt) => {
 
   //   console.log(level.map((row) => row.slice(400, 600).join("")).join("\n"));
   return [countA, counter];
+};
+
+export const task15: Task<
+  number,
+  number,
+  [targetRow?: number | void, targetArea?: number | void]
+> = async (
+  input,
+  targetRow = 2_000_000,
+  targetArea = 4_000_000,
+) => {
+  const sensors = await I.execPipe(
+    input,
+    I.asyncMap((line) => {
+      const [s, b] = [...line.matchAll(/x=(-?\d+), y=(-?\d+)/g)]
+        .map(([, x, y]) => [Number(x), Number(y)]);
+      return ({
+        sx: s[0],
+        sy: s[1],
+        bx: b[0],
+        by: b[1],
+        dist: Math.abs(s[0] - b[0]) + Math.abs(s[1] - b[1]),
+      });
+    }),
+    I.arrayFromAsync,
+  );
+
+  let count = 0, resultX = -1, resultY = -1;
+  outer:
+  for (let y = 0; y <= targetArea; y++) {
+    const sensorsInRange = sensors.filter(({ sy, dist }) =>
+      Math.abs(y - sy) <= dist
+    );
+    const ranges = sensorsInRange.map(({ sy, sx, dist }) => {
+      const distX = dist - Math.abs(y - sy);
+      return [sx - distX, sx + distX];
+    }).sort((a, b) => a[0] - b[0]);
+
+    let leftX = -1, rightX = -1;
+    for (const [lx, rx] of ranges) {
+      if (leftX == -1) {
+        leftX = lx;
+        rightX = rx;
+      } else if (lx <= rightX + 1) {
+        rightX = Math.max(rightX, rx);
+      } else {
+        resultX = rightX + 1;
+        resultY = y;
+        break outer;
+      }
+    }
+    if (y == targetRow) {
+      const beaconsInRow = sensorsInRange.filter(({ by }) => by == y);
+      count = _.max(ranges.map((r) => r[1]))! - ranges[0][0] + 1 -
+        _.uniqBy(beaconsInRow, ({ bx, by }) => [bx, by].join(",")).length;
+    }
+  }
+
+  return [count, resultX * 4_000_000 + resultY];
 };
