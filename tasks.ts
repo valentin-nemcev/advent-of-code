@@ -1,6 +1,8 @@
 // @deno-types="npm:@types/lodash"
-import _, { map, xor } from "npm:lodash";
+import _ from "npm:lodash";
 import * as I from "npm:iter-tools-es";
+
+const { floor, sign, abs, min, max } = Math;
 
 export type Task<T1 = number, T2 = T1, Args extends unknown[] = void[]> = (
   input: AsyncIterableIterator<string>,
@@ -243,9 +245,9 @@ export const task09: Task = async (input) => {
         const nodeA = snake[i - 1], nodeB = snake[i];
         const dist = [nodeA[0] - nodeB[0], nodeA[1] - nodeB[1]];
 
-        if (Math.abs(dist[0]) > 1 || Math.abs(dist[1]) > 1) {
-          nodeB[0] += Math.sign(dist[0]);
-          nodeB[1] += Math.sign(dist[1]);
+        if (abs(dist[0]) > 1 || abs(dist[1]) > 1) {
+          nodeB[0] += sign(dist[0]);
+          nodeB[1] += sign(dist[1]);
         }
       }
 
@@ -261,8 +263,8 @@ export const task10: Task<number, string[]> = async (input) => {
   let cycle = 0, reg = 1, resultA = 0;
   const display = _.times(6, () => new Array(40));
   const incrCycle = () => {
-    const row = Math.floor(cycle / 40), col = cycle % 40;
-    display[row][col] = Math.abs(col - reg) <= 1 ? "#" : ".";
+    const row = floor(cycle / 40), col = cycle % 40;
+    display[row][col] = abs(col - reg) <= 1 ? "#" : ".";
     cycle++;
     if ((cycle - 20) % 40 == 0) resultA += cycle * reg;
   };
@@ -313,9 +315,9 @@ export const task11: Task = async (input) => {
       monkey.inspectCount = 0;
     });
     _.range(rounds).forEach(() => {
-      monkeys.forEach((monkey, i) => {
+      monkeys.forEach((monkey) => {
         monkey.items.forEach((item) => {
-          item = Math.floor(monkey.op(item) / k);
+          item = floor(monkey.op(item) / k);
           if (item > Number.MAX_SAFE_INTEGER) throw new Error("Overflow");
           if (k == 1) item = item % divBy;
 
@@ -429,7 +431,7 @@ export const task13: Task = async (inputIt) => {
       return null;
     }
     if (_.isArray(a) && _.isArray(b)) {
-      for (let i = 0; i < Math.min(a.length, b.length); i++) {
+      for (let i = 0; i < min(a.length, b.length); i++) {
         const c = compare(a[i], b[i]);
         if (_.isBoolean(c)) return c;
       }
@@ -496,7 +498,7 @@ export const task14: Task = async (inputIt) => {
     level.push(..._.times(extraY, () => _.times(width, () => "." as Cell)));
 
     for (const [[x1, y1], [x2, y2]] of I.window(2, points)) {
-      const dx = Math.sign(x2 - x1), dy = Math.sign(y2 - y1);
+      const dx = sign(x2 - x1), dy = sign(y2 - y1);
       _.range(x1, x2 + dx, dx).forEach((x) => level[y1][x] = "#");
       _.range(y1, y2 + dy, dy).forEach((y) => level[y][x1] = "#");
     }
@@ -549,7 +551,7 @@ export const task15: Task<
         sy: s[1],
         bx: b[0],
         by: b[1],
-        dist: Math.abs(s[0] - b[0]) + Math.abs(s[1] - b[1]),
+        dist: abs(s[0] - b[0]) + abs(s[1] - b[1]),
       });
     }),
     I.arrayFromAsync,
@@ -559,10 +561,10 @@ export const task15: Task<
   outer:
   for (let y = 0; y <= targetArea; y++) {
     const sensorsInRange = sensors.filter(({ sy, dist }) =>
-      Math.abs(y - sy) <= dist
+      abs(y - sy) <= dist
     );
     const ranges = sensorsInRange.map(({ sy, sx, dist }) => {
-      const distX = dist - Math.abs(y - sy);
+      const distX = dist - abs(y - sy);
       return [sx - distX, sx + distX];
     }).sort((a, b) => a[0] - b[0]);
 
@@ -572,7 +574,7 @@ export const task15: Task<
         leftX = lx;
         rightX = rx;
       } else if (lx <= rightX + 1) {
-        rightX = Math.max(rightX, rx);
+        rightX = max(rightX, rx);
       } else {
         resultX = rightX + 1;
         resultY = y;
