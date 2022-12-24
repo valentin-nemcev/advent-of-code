@@ -2,7 +2,7 @@
 import _ from "npm:lodash";
 import * as I from "npm:iter-tools-es";
 
-const { floor, sign, abs, min, max } = Math;
+const { floor, ceil, sign, abs, min, max } = Math;
 
 export type Task<T1 = number, T2 = T1, Args extends unknown[] = void[]> = (
   input: AsyncIterableIterator<string>,
@@ -538,7 +538,7 @@ export const task15: Task<
   [targetRow?: number | void, targetArea?: number | void]
 > = async (
   input,
-  targetRow = 2_000_000,
+  targetY = 2_000_000,
   targetArea = 4_000_000,
 ) => {
   const sensors = await I.execPipe(
@@ -557,34 +557,48 @@ export const task15: Task<
     I.arrayFromAsync,
   );
 
-  let count = 0, resultX = -1, resultY = -1;
-  outer:
-  for (let y = 0; y <= targetArea; y++) {
-    const sensorsInRange = sensors.filter(({ sy, dist }) =>
-      abs(y - sy) <= dist
-    );
-    const ranges = sensorsInRange.map(({ sy, sx, dist }) => {
-      const distX = dist - abs(y - sy);
-      return [sx - distX, sx + distX];
-    }).sort((a, b) => a[0] - b[0]);
+  const beacons = _(sensors)
+    .map(({ bx, by }) => ({ x: bx, y: by }))
+    .uniqWith(_.isEqual);
 
-    let leftX = -1, rightX = -1;
-    for (const [lx, rx] of ranges) {
-      if (leftX == -1) {
-        leftX = lx;
-        rightX = rx;
-      } else if (lx <= rightX + 1) {
-        rightX = max(rightX, rx);
-      } else {
-        resultX = rightX + 1;
+  const targetSensors = _(sensors).map(({ sx, sy, dist }) => {
+    const distX = dist - abs(targetY - sy);
+    return [sx - distX, sx + distX];
+  }).filter(([lx, ly]) => lx <= ly);
+
+  const count = targetSensors.map("1").max() + 1 -
+    targetSensors.map("0").min() -
+    beacons.filter(({ y }) => y == targetY).size();
+
+  let resultX = -1, resultY = -1;
+
+  outer:
+  for (const sa of sensors) {
+    for (const sb of sensors) {
+      if (sa == sb) continue;
+      // top to right
+      const xa0 = sa.sx, ya0 = sa.sy - sa.dist;
+
+      // top to left
+      const xb0 = sb.sx, yb0 = sb.sy - sb.dist;
+
+      const xc = xb0 - xa0, yc = yb0 - ya0;
+      const da = (xc + yc) / 2, db = (xc - yc) / 2;
+
+      if (0 > da || da > sa.dist || 0 > db || db > sb.dist) continue;
+
+      const ix = xa0 + da, y = floor(ya0 + da) - 1;
+
+      for (const x of [floor(ix), ceil(ix)]) {
+        if (0 > x || x > targetArea || 0 > y || y > targetArea) continue;
+        if (
+          sensors.some(({ sx, sy, dist }) => abs(sx - x) + abs(sy - y) <= dist)
+        ) continue;
+
+        resultX = x;
         resultY = y;
         break outer;
       }
-    }
-    if (y == targetRow) {
-      const beaconsInRow = sensorsInRange.filter(({ by }) => by == y);
-      count = _.max(ranges.map((r) => r[1]))! - ranges[0][0] + 1 -
-        _.uniqBy(beaconsInRow, ({ bx, by }) => [bx, by].join(",")).length;
     }
   }
 
