@@ -2,6 +2,7 @@
 import _ from "npm:lodash";
 import * as I from "npm:iter-tools-es";
 
+// deno-lint-ignore no-unused-vars
 const { floor, ceil, sign, abs, min, max } = Math;
 
 export type Task<T1 = number, T2 = T1, Args extends unknown[] = void[]> = (
@@ -603,4 +604,77 @@ export const task15: Task<
   }
 
   return [count, resultX * 4_000_000 + resultY];
+};
+
+export const task16: Task = async (input) => {
+  const valves = await I.execPipe(
+    input,
+    I.asyncMap((line) => {
+      const [, name, rate, outgoing] = line.match(
+        /Valve (\w+) has flow rate=(\d*); tunnels? leads? to valves? (.*)/,
+      )!;
+      console.log(line, name, rate, outgoing);
+      const valve = {
+        rate: Number(rate),
+        outgoing: outgoing.split(", "),
+        isOpen: rate == "0",
+      };
+      return [name, valve] as [string, typeof valve];
+    }),
+    I.objectFromAsync,
+  );
+  const start = _(valves).keys().first()!;
+  const openCount = _(valves).filter("isOpen").size();
+  const count = _.size(valves);
+  console.log(valves, start);
+
+  const work = (
+    valve: string,
+    openCount: number,
+    rate: number,
+    released: number,
+    minutes: number,
+    lastOpened: number,
+  ): number => {
+    // console.log(minutes, valve, open, released);
+    if (minutes == 0) {
+      return released;
+    }
+    if (lastOpened > count) return 0;
+    if (openCount == count) {
+      return released + rate * minutes;
+    }
+
+    minutes--;
+    released += rate;
+    let result = 0;
+    const vv = valves[valve];
+    if (!vv.isOpen) {
+      vv.isOpen = true;
+      result = max(
+        result,
+        work(
+          valve,
+          openCount + 1,
+          rate + vv.rate,
+          released,
+          minutes,
+          0,
+        ),
+      );
+      vv.isOpen = false;
+    }
+    for (const v of vv.outgoing) {
+      result = max(
+        result,
+        work(v, openCount, rate, released, minutes, lastOpened + 1),
+      );
+    }
+    return result;
+  };
+
+  console.log(count, openCount, _(valves).filter("isOpen").size());
+
+  const resultA = work(start, openCount, 0, 0, 21, 0);
+  return [resultA, 0];
 };
