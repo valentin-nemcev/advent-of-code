@@ -484,3 +484,11 @@ Deno.test({
     assertEquals(await taskWithInput(16, T.task16), [1857, 2536]);
   },
 });
+
+Deno.test("task 17", async () => {
+  const input = example`
+    >>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>
+  `;
+  assertEquals(await T.task17(input), [3068, 1514285714288]);
+  assertEquals(await taskWithInput(17, T.task17), [3197, 0]);
+});
