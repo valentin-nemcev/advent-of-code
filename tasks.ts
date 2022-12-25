@@ -613,16 +613,11 @@ export const task16: Task = async (input) => {
       const [, name, rate, outgoing] = line.match(
         /Valve (\w+) has flow rate=(\d*); tunnels? leads? to valves? (.*)/,
       )!;
-      const valve = {
-        name,
-        rate: Number(rate),
-        outgoing: outgoing.split(", "),
-      };
-      return [name, valve] as [string, typeof valve];
+      const v = { name, rate: Number(rate), outgoing: outgoing.split(", ") };
+      return [name, v] as [string, typeof v];
     }),
     I.objectFromAsync,
   );
-  // console.log(valves);
 
   const start = "AA"; // AAAAAAAAAAAAAAAAAAAAAA, always start at AA 😭😭😭😭
   const viable = _(valves).filter((v) => v.rate > 0).map("name").value();
@@ -642,29 +637,18 @@ export const task16: Task = async (input) => {
     return [v, result];
   }));
 
-  const work = (
-    v: string,
-    minutes: number,
-    closed: string[],
-    second: boolean,
-  ) => {
+  const work = (v: string, m: number, closed: string[], second: boolean) => {
     let r = 0;
     for (const vv of closed) {
       const d = (reach[v][vv] ?? 1000) + 1;
-      if (d >= minutes) continue;
+      if (d >= m) continue;
       r = max(
         r,
-        valves[vv].rate * (minutes - d) + work(
-          vv,
-          minutes - d,
-          _.without(closed, vv),
-          second,
-        ),
+        valves[vv].rate * (m - d) +
+          work(vv, m - d, _.without(closed, vv), second),
       );
     }
-    if (second) {
-      r = max(r, work(start, 26, closed, false));
-    }
+    if (second) r = max(r, work(start, 26, closed, false));
     return r;
   };
   const resultA = work(start, 30, viable, false);
