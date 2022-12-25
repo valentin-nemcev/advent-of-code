@@ -1,5 +1,5 @@
 // @deno-types="npm:@types/lodash"
-import _, { Dictionary } from "npm:lodash";
+import _, { Dictionary, uniqBy } from "npm:lodash";
 import * as I from "npm:iter-tools-es";
 
 // deno-lint-ignore no-unused-vars
@@ -658,75 +658,106 @@ export const task16: Task = async (input) => {
 };
 
 export const task17: Task = async (input) => {
-  const w = 7;
-  
-  
-  // rocks are flipped vertically
+  const print = (a: Uint8Array, w: number) =>
+    _.map(a, (i) => _.range(w).map((p) => i & (1 << p) ? "#" : ".").join(""))
+      .join("\n");
+
+  // coordinate system and rocks are flipped vertically & horizontally
   const rocks = [
-    [[1, 1, 1, 1]],
+    [0b1111],
     [
-      [0, 1, 0],
-      [1, 1, 1],
-      [0, 1, 0],
+      0b010,
+      0b111,
+      0b010,
     ],
     [
-      [1, 1, 1],
-      [0, 0, 1],
-      [0, 0, 1],
+      0b111,
+      0b100,
+      0b100,
     ],
-    [[1], [1], [1], [1]],
+    [0b1, 0b1, 0b1, 0b1],
     [
-      [1, 1],
-      [1, 1],
+      0b11,
+      0b11,
     ],
-  ];
+  ].map((rock) => new Uint8Array(rock));
+
+  // rocks.forEach((r) => console.log(print(r, 4)));
+
+  // rocks.forEach((r) => console.log(print(r.map((l) => (l << 4) >> 0), 8)));
 
   const dirs = (await I.asyncFirst(input))!.split("")
     .map((d) => d == "<" ? -1 : 1);
 
   let collapsed = 0;
-  let stack: number[][] = [];
+  // let stack: number[][] = [];
+
+  const stack = new Uint8Array(1 * 1024 * 1024);
+  let top = 0;
 
   let resultA = 0;
-
+  console.log(dirs.length);
+  // return [0, 0];
   let di = 0;
+  let seen: [number, number][] = [];
   for (let i = 0; i < 1_000_000_000_000; i++) {
-    if (i == 2022) resultA = collapsed + stack.length;
-    // if (i > 3000) break;
-    if (i > 10_000_000) break;
-    let x = 2, y = stack.length + 3;
+    if (i == 2022) resultA = top;
+    if (i % rocks.length == 0) {
+      const last = seen.findIndex(([seenDi]) => seenDi == di);
+      seen.push([di, top]);
+      console.log(i, di, top, last);
+      if (last > 0) throw "!";
+    }
+
+    if (i > 1_000_000) break;
+
+    let x = 2, y = top + 3;
     const rock = rocks[i % rocks.length];
+    // if (i % 10_000 == 0) console.log(i, top);
 
     const intersects = (x: number, y: number) => {
-      if (x < 0 || x + rock[0].length > w || y < 0) return true;
+      if (y < 0 || x < 0) return true;
       for (let ry = 0; ry < rock.length; ry++) {
-        if (y + ry >= stack.length) break;
-        for (let rx = 0; rx < rock[0].length; rx++) {
-          if (stack[y + ry][x + rx] && rock[ry][rx]) return true;
-        }
+        const rr = rock[ry] << x;
+        if (rr & (1 << 7)) return true;
+        if (rr & stack[y + ry]) return true;
       }
     };
     while (true) {
-      const d = dirs[di++ % dirs.length];
+      const d = dirs[di];
+      di = (di + 1) % dirs.length;
       if (!intersects(x + d, y)) x += d;
       if (intersects(x, y - 1)) {
-        rock.forEach((r, ry) => {
-          const sr = stack[y + ry] ??= new Array(w).fill(0);
-          r.forEach((c, rx) => {
-            if (c) sr[x + rx] = c;
-          });
-        });
+        for (let ry = 0; ry < rock.length; ry++) {
+          stack[y + ry] |= rock[ry] << x;
+        }
+        while (stack[top]) top++;
         break;
       } else {
         y--;
       }
     }
-    while (stack.length > 200_000) {
-      collapsed += stack.length - 100_000;
-      stack = stack.slice(100_000);
-      // console.log(i, stack.length);
+
+    // if (i < 7) {
+    //   console.log("stack " + i);
+    //   console.log(print(stack.slice(0, 10).reverse(), 7));
+    // }
+    if (top >= stack.length - (4 + 3)) {
+      // console.log(i, top);
+      // console.log(print(stack.slice(-10).reverse(), 7));
+      const mid = stack.length / 2;
+      stack.copyWithin(0, mid);
+      stack.fill(0, mid);
+      top -= mid;
+      collapsed += mid;
+      // break;
     }
+    // while (stack.length > 200_000) {
+    //   collapsed += stack.length - 100_000;
+    //   stack = stack.slice(100_000);
+    //   // console.log(i, stack.length);
+    // }
   }
-  console.log(Deno.memoryUsage().heapUsed / (1024 * 1024));
-  return [resultA, collapsed + stack.length];
+  console.log("memory", Deno.memoryUsage().heapUsed / (1024 * 1024));
+  return [resultA, collapsed + top];
 };
