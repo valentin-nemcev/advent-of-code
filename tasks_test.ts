@@ -474,6 +474,13 @@ Deno.test("task 16", async () => {
     Valve II has flow rate=0; tunnels lead to valves AA, JJ
     Valve JJ has flow rate=21; tunnel leads to valve II
   `;
-  assertEquals(await T.task16(input), [1651, 0]);
-  assertEquals(await taskWithInput(16, T.task16), [0, 0]);
+  assertEquals(await T.task16(input), [1651, 1707]);
+});
+
+Deno.test({
+  name: "task 16 long",
+  ignore: true,
+  fn: async () => {
+    assertEquals(await taskWithInput(16, T.task16), [1857, 2536]);
+  },
 });

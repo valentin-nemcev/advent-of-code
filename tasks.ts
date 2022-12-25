@@ -1,5 +1,5 @@
 // @deno-types="npm:@types/lodash"
-import _ from "npm:lodash";
+import _, { Dictionary } from "npm:lodash";
 import * as I from "npm:iter-tools-es";
 
 // deno-lint-ignore no-unused-vars
@@ -613,68 +613,62 @@ export const task16: Task = async (input) => {
       const [, name, rate, outgoing] = line.match(
         /Valve (\w+) has flow rate=(\d*); tunnels? leads? to valves? (.*)/,
       )!;
-      console.log(line, name, rate, outgoing);
       const valve = {
+        name,
         rate: Number(rate),
         outgoing: outgoing.split(", "),
-        isOpen: rate == "0",
       };
       return [name, valve] as [string, typeof valve];
     }),
     I.objectFromAsync,
   );
-  const start = _(valves).keys().first()!;
-  const openCount = _(valves).filter("isOpen").size();
-  const count = _.size(valves);
-  console.log(valves, start);
+  // console.log(valves);
+
+  const start = "AA"; // AAAAAAAAAAAAAAAAAAAAAA, always start at AA 😭😭😭😭
+  const viable = _(valves).filter((v) => v.rate > 0).map("name").value();
+
+  const reach = _.fromPairs([start, ...viable].map((v) => {
+    const result: Dictionary<number> = {};
+    const visited: string[] = [];
+    let edge = [v];
+    for (let dist = 0; edge.length > 0; dist++) {
+      edge = edge.flatMap((vv) => {
+        if (visited.includes(vv)) return [];
+        visited.push(vv);
+        if (viable.includes(vv) && dist) result[vv] = dist;
+        return valves[vv].outgoing;
+      });
+    }
+    return [v, result];
+  }));
 
   const work = (
-    valve: string,
-    openCount: number,
-    rate: number,
-    released: number,
+    v: string,
     minutes: number,
-    lastOpened: number,
-  ): number => {
-    // console.log(minutes, valve, open, released);
-    if (minutes == 0) {
-      return released;
-    }
-    if (lastOpened > count) return 0;
-    if (openCount == count) {
-      return released + rate * minutes;
-    }
-
-    minutes--;
-    released += rate;
-    let result = 0;
-    const vv = valves[valve];
-    if (!vv.isOpen) {
-      vv.isOpen = true;
-      result = max(
-        result,
-        work(
-          valve,
-          openCount + 1,
-          rate + vv.rate,
-          released,
-          minutes,
-          0,
+    closed: string[],
+    second: boolean,
+  ) => {
+    let r = 0;
+    for (const vv of closed) {
+      const d = (reach[v][vv] ?? 1000) + 1;
+      if (d >= minutes) continue;
+      r = max(
+        r,
+        valves[vv].rate * (minutes - d) + work(
+          vv,
+          minutes - d,
+          _.without(closed, vv),
+          second,
         ),
       );
-      vv.isOpen = false;
     }
-    for (const v of vv.outgoing) {
-      result = max(
-        result,
-        work(v, openCount, rate, released, minutes, lastOpened + 1),
-      );
+    if (second) {
+      r = max(r, work(start, 26, closed, false));
     }
-    return result;
+    return r;
   };
+  const resultA = work(start, 30, viable, false);
+  const resultB = work(start, 26, viable, true);
 
-  console.log(count, openCount, _(valves).filter("isOpen").size());
-
-  const resultA = work(start, openCount, 0, 0, 21, 0);
-  return [resultA, 0];
+  return [resultA, resultB];
 };
