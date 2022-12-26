@@ -1,5 +1,5 @@
 // @deno-types="npm:@types/lodash"
-import _, { Dictionary, uniqBy } from "npm:lodash";
+import _, { Dictionary, filter, uniqBy } from "npm:lodash";
 import * as I from "npm:iter-tools-es";
 
 // deno-lint-ignore no-unused-vars
@@ -417,30 +417,26 @@ export const task12: Task = async (input) => {
 };
 
 export const task13: Task = async (inputIt) => {
-  const parseLine = (line: string): NestedArray<number> => eval(line);
+  const BO = -1, BC = -2;
+  const parseLine = (line: string) =>
+    line.match(/\[|\]|\d+/g)!
+      .map((t) => t == "[" ? BO : t == "]" ? BC : Number(t));
 
-  type NestedArray<T> = Array<T | NestedArray<T>>;
-  const compare = (
-    a: number | NestedArray<number>,
-    b: number | NestedArray<number>,
-  ): boolean | null => {
-    if (_.isArray(a) && _.isNumber(b)) return compare(a, [b]);
-    if (_.isNumber(a) && _.isArray(b)) return compare([a], b);
-    if (_.isNumber(a) && _.isNumber(b)) {
-      if (a < b) return true;
-      if (a > b) return false;
-      return null;
+  // -1 right order; 0 no difference; 1 wrong order
+  const compare = (left: number[], right: number[]): number => {
+    left = left.slice();
+    right = right.slice();
+    while (left.length && right.length) {
+      const l = left.shift()!, r = right.shift()!;
+      if (l == BO && r >= 0) right.unshift(r, BC);
+      else if (r == BO && l >= 0) left.unshift(l, BC);
+      else if (l == BC && r != BC) return -1;
+      else if (l != BC && r == BC) return 1;
+      else if (l < r) return -1;
+      else if (l > r) return 1;
     }
-    if (_.isArray(a) && _.isArray(b)) {
-      for (let i = 0; i < min(a.length, b.length); i++) {
-        const c = compare(a[i], b[i]);
-        if (_.isBoolean(c)) return c;
-      }
-      if (a.length < b.length) return true;
-      if (a.length > b.length) return false;
-      return null;
-    }
-    throw new Error("No match");
+    if (left.length || right.length) throw `Leftovers`;
+    throw new Error("No difference");
   };
 
   const input = await I.arrayFromAsync(inputIt);
@@ -448,13 +444,9 @@ export const task13: Task = async (inputIt) => {
   const filtered = I.execPipe(
     input,
     I.splitWhen(_.isEmpty),
-    I.map(I.pipe(I.map(parseLine))),
+    I.map(I.map(parseLine)),
     I.enumerate(1),
-    I.filter(([, [left, right]]) => {
-      const c = compare(left, right);
-      if (_.isBoolean(c)) return c;
-      throw new Error("No difference");
-    }),
+    I.filter(([, [left, right]]) => compare(left, right) == -1),
     I.arrayFrom,
   );
 
@@ -463,26 +455,15 @@ export const task13: Task = async (inputIt) => {
     I.filter((l) => !_.isEmpty(l)),
     I.map(parseLine),
     I.arrayFrom,
-    (c) =>
-      c.sort((left, right) => {
-        const c = compare(left, right);
-        if (c === true) return -1;
-        if (c === false) return 1;
-        throw new Error("No difference");
-      }),
   );
 
-  let indexA = -1, indexB = -1;
+  const markerA = parseLine("[[2]]");
+  const markerB = parseLine("[[6]]");
+  sorted.push(markerA, markerB);
+  sorted.sort(compare);
 
-  for (let i = 0; i < sorted.length; i++) {
-    if (indexA == -1) {
-      if (compare(sorted[i], [[2]]) == false) indexA = i + 1;
-    } else if (indexB == -1) {
-      if (compare(sorted[i], [[6]]) == false) indexB = i + 2;
-    } else {
-      break;
-    }
-  }
+  const indexA = sorted.findIndex((l) => _.isEqual(l, markerA)) + 1,
+    indexB = sorted.findIndex((l) => _.isEqual(l, markerB)) + 1;
 
   return [_.sum(filtered.map(_.first)), indexA * indexB];
 };
