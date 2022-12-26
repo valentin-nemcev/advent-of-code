@@ -663,38 +663,38 @@ export const task17: Task = async (input) => {
     ],
   ].map((rock) => new Uint8Array(rock));
 
-  // rocks.forEach((r) => console.log(print(r, 4)));
-
-  // rocks.forEach((r) => console.log(print(r.map((l) => (l << 4) >> 0), 8)));
-
   const dirs = (await I.asyncFirst(input))!.split("")
     .map((d) => d == "<" ? -1 : 1);
 
-  let collapsed = 0;
-  // let stack: number[][] = [];
-
-  const stack = new Uint8Array(1 * 1024 * 1024);
+  const stack = new Uint8Array(10000);
   let top = 0;
 
-  let resultA = 0;
-  console.log(dirs.length);
-  // return [0, 0];
-  let di = 0;
-  let seen: [number, number][] = [];
-  for (let i = 0; i < 1_000_000_000_000; i++) {
-    if (i == 2022) resultA = top;
-    if (i % rocks.length == 0) {
-      const last = seen.findIndex(([seenDi]) => seenDi == di);
-      seen.push([di, top]);
-      console.log(i, di, top, last);
-      if (last > 0) throw "!";
-    }
+  let resultA = 0, resultB = 0;
 
-    if (i > 1_000_000) break;
+  let di = 0;
+  const seen: [number, number][] = [];
+  for (let i = 0; i < 10000; i++) {
+    if (i == 2022) resultA = top;
+    const offset = seen.findLastIndex(([seenDi, seenTop]) =>
+      seenDi == di &&
+      seenTop > 30 && _.isEqual(
+        stack.slice(seenTop - 30, seenTop),
+        stack.slice(top - 30, top),
+      )
+    );
+    seen.push([di, top]);
+    if (offset % rocks.length == i % rocks.length && offset > 0) {
+      const target = 1_000_000_000_000;
+      const period = i - offset;
+      const cycle = top - seen[offset][1];
+      const remOffset = offset + (target - i) % period;
+      const rem = seen[remOffset][1] - seen[offset][1];
+      resultB = top + floor((target - i) / period) * cycle + rem;
+    }
+    if (resultA && resultB) break;
 
     let x = 2, y = top + 3;
     const rock = rocks[i % rocks.length];
-    // if (i % 10_000 == 0) console.log(i, top);
 
     const intersects = (x: number, y: number) => {
       if (y < 0 || x < 0) return true;
@@ -709,36 +709,13 @@ export const task17: Task = async (input) => {
       di = (di + 1) % dirs.length;
       if (!intersects(x + d, y)) x += d;
       if (intersects(x, y - 1)) {
-        for (let ry = 0; ry < rock.length; ry++) {
-          stack[y + ry] |= rock[ry] << x;
-        }
+        for (let ry = 0; ry < rock.length; ry++) stack[y + ry] |= rock[ry] << x;
         while (stack[top]) top++;
         break;
       } else {
         y--;
       }
     }
-
-    // if (i < 7) {
-    //   console.log("stack " + i);
-    //   console.log(print(stack.slice(0, 10).reverse(), 7));
-    // }
-    if (top >= stack.length - (4 + 3)) {
-      // console.log(i, top);
-      // console.log(print(stack.slice(-10).reverse(), 7));
-      const mid = stack.length / 2;
-      stack.copyWithin(0, mid);
-      stack.fill(0, mid);
-      top -= mid;
-      collapsed += mid;
-      // break;
-    }
-    // while (stack.length > 200_000) {
-    //   collapsed += stack.length - 100_000;
-    //   stack = stack.slice(100_000);
-    //   // console.log(i, stack.length);
-    // }
   }
-  console.log("memory", Deno.memoryUsage().heapUsed / (1024 * 1024));
-  return [resultA, collapsed + top];
+  return [resultA, resultB];
 };
